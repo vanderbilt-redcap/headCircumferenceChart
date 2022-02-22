@@ -1,0 +1,121 @@
+{
+	"name": "Head Circumference Chart",
+
+	"namespace": "Vanderbilt\\HeadCircChart",
+
+	"description": "Inserts a chart for typical head circumference (must be uploaded) into REDCap form and marks the current record's location on the chart based on age/head circumference.",
+
+    "authors": [
+        {
+            "name": "Kyle McGuffin",
+            "email": "datacore@vumc.org",
+			"institution": "Vanderbilt University Medical Center"
+        }
+    ],
+	
+	"permissions": [
+	  "redcap_data_entry_form"
+	],
+
+  	"framework-version": 6,
+
+  	"links" : {
+	  "project": [
+	  ],
+	  "control-center": [
+	  ]
+	},
+
+	"project-settings": [
+	  {
+		"key": "chart-field",
+		"name": "Field to display chart",
+		"type": "field-list"
+	  },
+	  {
+		"key": "girls-chart",
+		"name": "Image for Girls Chart",
+		"type": "file-upload"
+	  },
+	  {
+		"key": "boys-chart",
+		"name": "Image for Boys Chart",
+		"type": "file-upload"
+	  },
+	  {
+		"key": "sex-field",
+		"name": "Field for child's sex",
+		"type": "field-list"
+	  },
+	  {
+		"key": "age-field",
+		"name": "Field for child's age",
+		"type": "field-list"
+	  },
+	  {
+		"key": "circumference-field",
+		"name": "Field for head circumference",
+		"type": "field-list"
+	  },
+	  {
+		"key": "x-offset-girls",
+		"name": "Horizontal pixel start for girl's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "y-offset-girls",
+		"name": "Vertical pixel start for girl's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "x-width-girls",
+		"name": "Horizontal pixel width for girl's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "y-width-girls",
+		"name": "Vertical pixel height for girl's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "x-offset-boys",
+		"name": "Horizontal pixel start for boy's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "y-offset-boys",
+		"name": "Vertical pixel start for boy's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "x-width-boys",
+		"name": "Horizontal pixel width for boy's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "y-width-boys",
+		"name": "Vertical pixel height for boy's chart",
+		"type": "text"
+	  },
+	  {
+		"key": "x-start-age",
+		"name": "Min age on charts (months)",
+		"type": "text"
+	  },
+	  {
+		"key": "x-end-age",
+		"name": "Max age on charts (months)",
+		"type": "text"
+	  },
+	  {
+		"key": "y-start-head",
+		"name": "Min head circumference on charts (cm)",
+		"type": "text"
+	  },
+	  {
+		"key": "y-end-head",
+		"name": "Max head circumference on charts (cm)",
+		"type": "text"
+	  }
+	]
+}
