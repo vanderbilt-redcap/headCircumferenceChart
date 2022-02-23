@@ -17,7 +17,11 @@ class HeadCircChart extends AbstractExternalModule
 			$chartInstrument = $this->getProject()->getFormForField($chartField);
 			
 			if($chartInstrument == $instrument) {
-				echo "<script type='text/javascript'>$(document).ready(function() { $('body').append('found it!'); });</script>";
+				echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
+				<script type='text/javascript'>
+						var headCircImagePath = '".$this->getUrl("image.php")."';
+						$(document).ready(function() { insertImageChart('girls','".$chartField."'); });
+				</script>";
 			}
 		}
 	}

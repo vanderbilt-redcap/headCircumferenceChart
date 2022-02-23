@@ -35,12 +35,12 @@
 	  {
 		"key": "girls-chart",
 		"name": "Image for Girls Chart",
-		"type": "file-upload"
+		"type": "file"
 	  },
 	  {
 		"key": "boys-chart",
 		"name": "Image for Boys Chart",
-		"type": "file-upload"
+		"type": "file"
 	  },
 	  {
 		"key": "sex-field",
