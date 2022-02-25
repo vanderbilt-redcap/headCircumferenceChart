@@ -62,7 +62,8 @@ class HeadCircChart extends AbstractExternalModule
 					$headStart = $this->getProjectSetting("y-start-head");
 					$headRange = $this->getProjectSetting("y-end-head");
 					
-					if($startX && $startY && $xWidth && $yWidth && $ageStart && $ageRange && $headStart && $headRange) {
+					if($startX !== "" && $startY !== "" && $xWidth !== "" && $yWidth !== "" &&
+							$ageStart !== "" && $ageRange !== "" && $headStart !== "" && $headRange !== "") {
 						$x = $startX + ($xWidth / ($ageRange - $ageStart)) * ($age - $ageStart);
 						$y = $startY + ($yWidth / ($headRange - $headStart)) * ($circumference - $headStart);
 						
