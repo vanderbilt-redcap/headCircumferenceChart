@@ -2,28 +2,15 @@
 $fileId = $_GET["type"];
 
 /** @var $module \Vanderbilt\HeadCircChart\HeadCircChart */
-if($fileId == "girls") {
-	$imageFile = $module->getProjectSetting("girls-chart");
-}
-else if($fileId == "boys") {
-	$imageFile = $module->getProjectSetting("boys-chart");
+if(array_key_exists($fileId,\Vanderbilt\HeadCircChart\HeadCircChart::$imageDetails)) {
+	$imageFile = \Vanderbilt\HeadCircChart\HeadCircChart::$imageDetails[$fileId]["imageLocation"];
 }
 else {
 	die("Invalid type");
 }
 
-$q = $module->query("SELECT *
-					FROM redcap_edocs_metadata
-					WHERE doc_id = ?", $imageFile);
 
-if($row = db_fetch_assoc($q)) {
-	//get latest image with base64_encode
-	$imageData = file_get_contents(EDOC_PATH . $row['stored_name']);
-	$fileType = $row["mime_type"];
-}
+$imageData = file_get_contents($imageFile);
 
-if(!in_array($fileType,["image/jpeg","image/png","image/jpg"])) {
-	die("Invalid file");
-}
-header("Content-Type: $fileType");
+header("Content-Type: image/png");
 echo $imageData;

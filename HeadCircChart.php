@@ -6,6 +6,20 @@ use ExternalModules\AbstractExternalModule;
 
 class HeadCircChart extends AbstractExternalModule
 {
+	public static $imageDetails = [
+		"boys" => [
+			"imageLocation" => __DIR__ . "/images/head_circ_chart_cdc_boys.png",
+			"pixelRange" => [96,100,500,600],
+			"graphRange" => [0,36,30,53],
+			"logic" => [["sex","=","1"]]
+		],
+		"girls" => [
+			"imageLocation" => __DIR__ . "/images/head_circ_chart_cdc_girls.png",
+			"pixelRange" => [83,100,500,600],
+			"graphRange" => [0,36,30,53],
+			"logic" => [["sex","=","0"]]
+		]
+	];
 	
 	function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
 		$chartField = $this->getProjectSetting("chart-field");
@@ -44,35 +58,39 @@ class HeadCircChart extends AbstractExternalModule
 					}
 				}
 				
-				## Calculate x,y coordinates of mark
-				if($sex === "0") {
-					$chartType = "girls";
-				}
-				elseif($sex === "1") {
-					$chartType = "boys";
-				}
-				
-				if($age && $circumference && $chartType) {
-					$startX = $this->getProjectSetting("x-offset-$chartType");
-					$startY = $this->getProjectSetting("y-offset-$chartType");
-					$xWidth = $this->getProjectSetting("x-width-$chartType");
-					$yWidth = $this->getProjectSetting("y-width-$chartType");
-					$ageStart = $this->getProjectSetting("x-start-age");
-					$ageRange = $this->getProjectSetting("x-end-age");
-					$headStart = $this->getProjectSetting("y-start-head");
-					$headRange = $this->getProjectSetting("y-end-head");
-					
-					if($startX !== "" && $startY !== "" && $xWidth !== "" && $yWidth !== "" &&
-							$ageStart !== "" && $ageRange !== "" && $headStart !== "" && $headRange !== "") {
-						$x = $startX + ($xWidth / ($ageRange - $ageStart)) * ($age - $ageStart);
-						$y = $startY + ($yWidth / ($headRange - $headStart)) * ($circumference - $headStart);
-						
-						echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
-							<script type='text/javascript'>
-									var headCircImagePath = '".$this->getUrl("image.php")."';
-									$(document).ready(function() { insertImageChart('girls','".$chartField."',$x,$y); });
-							</script>";
+				$chartDetails = false;
+				foreach(self::$imageDetails as $thisType => $thisImage) {
+					$logic = $thisImage["logic"];
+					if($$logic[0] === $logic[2]) {
+						$chartType = $thisType;
+						$chartDetails = $thisImage;
+						break;
 					}
+				}
+				## Calculate x,y coordinates of mark
+				if($age && $circumference && $chartDetails) {
+					echo "<br /><pre>";
+					var_dump($chartType);
+					var_dump($age);
+					var_dump($circumference);
+					echo "</pre><br />";
+					$startX = $chartDetails["pixelRange"][0];
+					$startY = $chartDetails["pixelRange"][1];
+					$xWidth = $chartDetails["pixelRange"][2];
+					$yWidth = $chartDetails["pixelRange"][3];
+					$ageStart = $chartDetails["graphRange"][0];
+					$ageRange = $chartDetails["graphRange"][1];
+					$headStart = $chartDetails["graphRange"][2];
+					$headRange = $chartDetails["graphRange"][3];
+					
+					$x = $startX + ($xWidth / ($ageRange - $ageStart)) * ($age - $ageStart);
+					$y = $startY + ($yWidth / ($headRange - $headStart)) * ($circumference - $headStart);
+					
+					echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
+						<script type='text/javascript'>
+								var headCircImagePath = '".$this->getUrl("image.php")."';
+								$(document).ready(function() { insertImageChart('".$chartType."','".$chartField."',$x,$y); });
+						</script>";
 				}
 				
 			}
