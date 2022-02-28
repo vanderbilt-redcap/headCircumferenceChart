@@ -69,11 +69,6 @@ class HeadCircChart extends AbstractExternalModule
 				}
 				## Calculate x,y coordinates of mark
 				if($age && $circumference && $chartDetails) {
-					echo "<br /><pre>";
-					var_dump($chartType);
-					var_dump($age);
-					var_dump($circumference);
-					echo "</pre><br />";
 					$startX = $chartDetails["pixelRange"][0];
 					$startY = $chartDetails["pixelRange"][1];
 					$xWidth = $chartDetails["pixelRange"][2];
