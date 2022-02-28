@@ -11,9 +11,10 @@ function insertImageChart(type,field,x,y) {
         let context = canvas.getContext('2d');
         context.drawImage(image,0,0);
         context.strokeStyle = "#FF0000";
-        context.lineWidth = 3;
         context.beginPath();
-        context.arc(x, image.height - y, 10, 0, 2 * Math.PI);
+        context.arc(x, image.height - y, 4, 0, 2 * Math.PI);
+        context.fillStyle = "#FF0000";
+        context.fill();
         context.stroke();
     }
 

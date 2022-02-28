@@ -9,13 +9,13 @@ class HeadCircChart extends AbstractExternalModule
 	public static $imageDetails = [
 		"boys" => [
 			"imageLocation" => __DIR__ . "/images/head_circ_chart_cdc_boys.png",
-			"pixelRange" => [96,100,500,600],
+			"pixelRange" => [83,100,508,600],
 			"graphRange" => [0,36,30,53],
 			"logic" => [["sex","=","1"]]
 		],
 		"girls" => [
 			"imageLocation" => __DIR__ . "/images/head_circ_chart_cdc_girls.png",
-			"pixelRange" => [83,100,500,600],
+			"pixelRange" => [96,100,503,600],
 			"graphRange" => [0,36,30,53],
 			"logic" => [["sex","=","0"]]
 		]
@@ -60,12 +60,16 @@ class HeadCircChart extends AbstractExternalModule
 				
 				$chartDetails = false;
 				foreach(self::$imageDetails as $thisType => $thisImage) {
-					$logic = $thisImage["logic"];
-					if($$logic[0] === $logic[2]) {
-						$chartType = $thisType;
-						$chartDetails = $thisImage;
-						break;
+					foreach($thisImage["logic"] as $thisLogic) {
+						$logicVar = $thisLogic[0];
+						if($$logicVar !== $thisLogic[2]) {
+							continue 2;
+						}
 					}
+					
+					$chartType = $thisType;
+					$chartDetails = $thisImage;
+					break;
 				}
 				## Calculate x,y coordinates of mark
 				if($age && $circumference && $chartDetails) {
