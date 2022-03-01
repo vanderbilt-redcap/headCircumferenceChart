@@ -31,9 +31,9 @@ class HeadCircChart extends AbstractExternalModule
 			$chartInstrument = $this->getProject()->getFormForField($chartField);
 			
 			if($chartInstrument == $instrument) {
-				$age = false;
+				$age = [];
+				$circumference = [];
 				$sex = false;
-				$circumference = false;
 				$chartType = false;
 				
 				$recordData = \REDCap::getData([
@@ -50,11 +50,9 @@ class HeadCircChart extends AbstractExternalModule
 						$sex = $eventDetails[$sexField];
 					}
 					
-					if(!array_key_exists("redcap_repeat_instance") ||
-								($eventDetails["redcap_repeat_instance"] == $repeat_instance &&
-								$eventDetails["redcap_repeat_instrument"] == $instrument)) {
-						$age = $eventDetails[$ageField];
-						$circumference = $eventDetails[$circumferenceField];
+					if($eventDetails["redcap_repeat_instrument"] == $instrument) {
+						$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
+						$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
 					}
 				}
 				
@@ -72,7 +70,7 @@ class HeadCircChart extends AbstractExternalModule
 					break;
 				}
 				## Calculate x,y coordinates of mark
-				if($age && $circumference && $chartDetails) {
+				if(count($age) > 0 && count($circumference) > 0 && $chartDetails) {
 					$startX = $chartDetails["pixelRange"][0];
 					$startY = $chartDetails["pixelRange"][1];
 					$xWidth = $chartDetails["pixelRange"][2];
@@ -82,13 +80,34 @@ class HeadCircChart extends AbstractExternalModule
 					$headStart = $chartDetails["graphRange"][2];
 					$headRange = $chartDetails["graphRange"][3];
 					
-					$x = $startX + ($xWidth / ($ageRange - $ageStart)) * ($age - $ageStart);
-					$y = $startY + ($yWidth / ($headRange - $headStart)) * ($circumference - $headStart);
+					
+					$instanceX = false;
+					$instanceY = false;
+					$x = [];
+					$y = [];
+					foreach($age as $instance => $thisAge) {
+						$thisCircumference = $circumference[$instance];
+						
+						if($thisAge === "" || $thisCircumference === "") {
+							continue;
+						}
+						
+						$thisX = round($startX + ($xWidth / ($ageRange - $ageStart)) * ($thisAge - $ageStart));
+						$thisY = round($startY + ($yWidth / ($headRange - $headStart)) * ($thisCircumference - $headStart));
+						
+						$x[] = $thisX;
+						$y[] = $thisY;
+						
+						if($instance == $repeat_instance) {
+							$instanceX = $thisX;
+							$instanceY = $thisY;
+						}
+					}
 					
 					echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
 						<script type='text/javascript'>
 								var headCircImagePath = '".$this->getUrl("image.php")."';
-								$(document).ready(function() { insertImageChart('".$chartType."','".$chartField."',$x,$y); });
+								$(document).ready(function() { insertImageChart('".$chartType."',".json_encode($chartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y)."); });
 						</script>";
 				}
 				
