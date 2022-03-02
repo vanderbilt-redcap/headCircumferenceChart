@@ -36,6 +36,9 @@ class HeadCircChart extends AbstractExternalModule
 				$sex = false;
 				$chartType = false;
 				
+				$thisAge = false;
+				$thisCircumference = false;
+				
 				$recordData = \REDCap::getData([
 					"records" => $record,
 					"project_id" => $project_id,
@@ -53,7 +56,27 @@ class HeadCircChart extends AbstractExternalModule
 					if($eventDetails["redcap_repeat_instrument"] == $instrument) {
 						$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
 						$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
+						
+						if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
+							$thisAge = $eventDetails[$ageField];
+							$thisCircumference = $eventDetails[$circumferenceField];
+						}
 					}
+				}
+				
+				## Calculate percentile and z-score for storage on form
+				if($thisAge !== false && $thisAge !== "" && $thisCircumference !== false && $thisCircumference !== "") {
+					$refData = $this->getCsvData();
+					$ageDays = round($thisAge * 30.5);
+					
+					$distributionData = $refData[$sex === "0" ? "2" : "1"][$ageDays];
+					
+					## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
+					$zScore = (pow($thisCircumference / $distributionData[1],$distributionData[0]) - 1) /
+						($distributionData[0]*$distributionData[2]);
+					$percentile = $this->zscoreToPercentile($zScore);
+					
+					## TODO save to REDCap record
 				}
 				
 				$chartDetails = false;
@@ -112,6 +135,55 @@ class HeadCircChart extends AbstractExternalModule
 				}
 				
 			}
+		}
+	}
+	
+	function getCsvData() {
+		$f = fopen(__DIR__."/data/WHOref_d.csv","r");
+		
+		$headers = fgetcsv($f);
+		$headers = array_flip($headers);
+		$data = [];
+		
+		while($row = fgetcsv($f)) {
+			$sex = $row[$headers["sex"]];
+			$ageDays = $row[$headers["_agedays"]];
+			$headL = $row[$headers["_headc_l"]];
+			$headM = $row[$headers["_headc_m"]];
+			$headS = $row[$headers["_headc_s"]];
+			
+			$data[$sex][$ageDays] = [$headL,$headM,$headS];
+		}
+		
+		return $data;
+	}
+
+	## Source: https://stackoverflow.com/questions/11603228/z-score-to-percentile-in-php
+	function erf($x)
+	{
+		$pi = 3.1415927;
+		$a = (8*($pi - 3))/(3*$pi*(4 - $pi));
+		$x2 = $x * $x;
+		
+		$ax2 = $a * $x2;
+		$num = (4/$pi) + $ax2;
+		$denom = 1 + $ax2;
+		
+		$inner = (-$x2)*$num/$denom;
+		$erf2 = 1 - exp($inner);
+		
+		return sqrt($erf2);
+	}
+	
+	function zscoreToPercentile($n)
+	{
+		if($n < 0)
+		{
+			return (1 - $this->erf($n / sqrt(2)))/2;
+		}
+		else
+		{
+			return (1 + $this->erf($n / sqrt(2)))/2;
 		}
 	}
 }
