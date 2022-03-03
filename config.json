@@ -14,7 +14,8 @@
     ],
 	
 	"permissions": [
-	  "redcap_data_entry_form"
+	  "redcap_data_entry_form",
+	  "redcap_save_record"
 	],
 
   	"framework-version": 6,
@@ -28,8 +29,18 @@
 
 	"project-settings": [
 	  {
-		"key": "chart-field",
-		"name": "Field to display chart",
+		"key": "circ-chart-field",
+		"name": "Field to display head circumference chart",
+		"type": "field-list"
+	  },
+	  {
+		"key": "height-chart-field",
+		"name": "Field to display height chart",
+		"type": "field-list"
+	  },
+	  {
+		"key": "weight-chart-field",
+		"name": "Field to display weight chart",
 		"type": "field-list"
 	  },
 	  {
@@ -43,9 +54,59 @@
 		"type": "field-list"
 	  },
 	  {
+		"key": "height-field",
+		"name": "Field for child's height",
+		"type": "field-list"
+	  },
+	  {
+		"key": "weight-field",
+		"name": "Field for child's weight",
+		"type": "field-list"
+	  },
+	  {
 		"key": "circumference-field",
 		"name": "Field for head circumference",
 		"type": "field-list"
+	  },
+	  {
+		"key": "gestational-age-field",
+		"name": "Field for gestational age at birth (for premature births)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "circ-zscore-field",
+		"name": "Field to save head circumference zscore to (optional)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "circ-percentile-field",
+		"name": "Field to save head circumference percentile to (optional)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "height-zscore-field",
+		"name": "Field to save height zscore to (optional)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "height-percentile-field",
+		"name": "Field to save height percentile to (optional)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "weight-zscore-field",
+		"name": "Field to save weight zscore to (optional)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "weight-percentile-field",
+		"name": "Field to save weight percentile to (optional)",
+		"type": "field-list"
+	  },
+	  {
+		"key": "debug-mode",
+		"name": "Enable debug mode for testing",
+		"type": "checkbox"
 	  }
 	]
 }
