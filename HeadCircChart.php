@@ -74,10 +74,17 @@ class HeadCircChart extends AbstractExternalModule
 		$heightInstrument = $this->getProject()->getFormForField($heightChartField);
 		$weightInstrument = $this->getProject()->getFormForField($weightChartField);
 		
-		## Process head circumference data
-		if($sexField && $ageField && $circumferenceField && $headChartField && $instrument == $circInstrument) {
+		## Process head circumference, height and weight data
+		if($sexField && $ageField) {
+			echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
+			<script type='text/javascript'>
+					var imagePath = '".$this->getUrl("image.php")."';
+			</script>";
+			
 			$age = [];
 			$circumference = [];
+			$height = [];
+			$weight = [];
 			$sex = false;
 			$chartType = false;
 			
@@ -87,72 +94,109 @@ class HeadCircChart extends AbstractExternalModule
 				}
 				
 				if($eventDetails["redcap_repeat_instrument"] == $instrument) {
-					$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
-					$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
+					if($eventDetails[$ageField] !== "") {
+						$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
+					}
+					if($circumferenceField && $eventDetails[$circumferenceField] !== "") {
+						$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
+					}
+					if($heightField && $eventDetails[$heightField] !== "") {
+						$height[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$heightField];
+					}
+					if($weightField && $eventDetails[$weightField] !== "") {
+						$weight[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$weightField];
+					}
 				}
 			}
 			
-			$chartDetails = false;
-			foreach(self::$imageDetails["headCirc"] as $thisType => $thisImage) {
-				foreach($thisImage["logic"] as $thisLogic) {
-					$logicVar = $thisLogic[0];
-					if($$logicVar !== $thisLogic[2]) {
-						continue 2;
+			## Insert head circumference chart if data exists
+			if(count($circumference) > 0 && $headChartField && $instrument == $circInstrument) {
+				$chartDetails = false;
+				foreach(self::$imageDetails["headCirc"] as $thisType => $thisImage) {
+					foreach($thisImage["logic"] as $thisLogic) {
+						$logicVar = $thisLogic[0];
+						if($$logicVar !== $thisLogic[2]) {
+							continue 2;
+						}
 					}
+					
+					$chartType2 = $thisType;
+					$chartDetails = $thisImage;
+					break;
 				}
 				
-				$chartType2 = $thisType;
-				$chartDetails = $thisImage;
-				break;
+				if($chartDetails) {
+					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$circumference,$repeat_instance);
+					
+					$debugDetails = false;
+					if($debugMode) {
+						$debugDetails = $chartDetails["pixelRange"];
+					}
+					
+					echo "<script type='text/javascript'>
+								$(document).ready(function() { insertImageChart('headCirc','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+						</script>";
+				}
 			}
-			echo "<br /><pre>";
-			var_dump($chartDetails);
-			echo "</pre><br />";
-			## Calculate x,y coordinates of mark
-			if(count($age) > 0 && count($circumference) > 0 && $chartDetails) {
-				$startX = $chartDetails["pixelRange"][0];
-				$startY = $chartDetails["pixelRange"][1];
-				$xWidth = $chartDetails["pixelRange"][2];
-				$yWidth = $chartDetails["pixelRange"][3];
-				$ageStart = $chartDetails["graphRange"][0];
-				$ageRange = $chartDetails["graphRange"][1];
-				$headStart = $chartDetails["graphRange"][2];
-				$headRange = $chartDetails["graphRange"][3];
-				
-				
-				$instanceX = false;
-				$instanceY = false;
-				$x = [];
-				$y = [];
-				foreach($age as $instance => $thisAge) {
-					$thisCircumference = $circumference[$instance];
-					
-					if($thisAge === "" || $thisCircumference === "") {
-						continue;
+			
+			## Insert height chart if data exists
+			if(count($height) > 0 && $heightChartField && $instrument == $heightInstrument) {
+				$chartDetails = false;
+				foreach(self::$imageDetails["height"] as $thisType => $thisImage) {
+					foreach($thisImage["logic"] as $thisLogic) {
+						$logicVar = $thisLogic[0];
+						if($$logicVar !== $thisLogic[2]) {
+							continue 2;
+						}
 					}
 					
-					$thisX = round($startX + ($xWidth / ($ageRange - $ageStart)) * ($thisAge - $ageStart));
-					$thisY = round($startY + ($yWidth / ($headRange - $headStart)) * ($thisCircumference - $headStart));
+					$chartType2 = $thisType;
+					$chartDetails = $thisImage;
+					break;
+				}
+				
+				if($chartDetails) {
+					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$height,$repeat_instance);
 					
-					$x[] = $thisX;
-					$y[] = $thisY;
-					
-					if($instance == $repeat_instance) {
-						$instanceX = $thisX;
-						$instanceY = $thisY;
+					$debugDetails = false;
+					if($debugMode) {
+						$debugDetails = $chartDetails["pixelRange"];
 					}
+					
+					echo "<script type='text/javascript'>
+								$(document).ready(function() { insertImageChart('height','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+						</script>";
+				}
+			}
+			
+			## Insert weight chart if data exists
+			if(count($weight) > 0 && $weightChartField && $instrument == $weightInstrument) {
+				$chartDetails = false;
+				foreach(self::$imageDetails["weight"] as $thisType => $thisImage) {
+					foreach($thisImage["logic"] as $thisLogic) {
+						$logicVar = $thisLogic[0];
+						if($$logicVar !== $thisLogic[2]) {
+							continue 2;
+						}
+					}
+					
+					$chartType2 = $thisType;
+					$chartDetails = $thisImage;
+					break;
 				}
 				
-				$debugDetails = false;
-				if($debugMode) {
-					$debugDetails = $chartDetails["pixelRange"];
+				if($chartDetails) {
+					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$weight,$repeat_instance);
+					
+					$debugDetails = false;
+					if($debugMode) {
+						$debugDetails = $chartDetails["pixelRange"];
+					}
+					
+					echo "<script type='text/javascript'>
+								$(document).ready(function() { insertImageChart('weight','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+						</script>";
 				}
-				
-				echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
-					<script type='text/javascript'>
-							var imagePath = '".$this->getUrl("image.php")."';
-							$(document).ready(function() { insertImageChart('headCirc','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
-					</script>";
 			}
 		}
 	}
@@ -279,6 +323,46 @@ class HeadCircChart extends AbstractExternalModule
 		}
 		
 		return $data;
+	}
+	
+	function calculateXY($chartDetails,$xValues,$yValues,$thisInstance) {
+		$startX = $chartDetails["pixelRange"][0];
+		$startY = $chartDetails["pixelRange"][1];
+		$xWidth = $chartDetails["pixelRange"][2];
+		$yWidth = $chartDetails["pixelRange"][3];
+		$startXValue = $chartDetails["graphRange"][0];
+		$endXValue = $chartDetails["graphRange"][1];
+		$startYValue = $chartDetails["graphRange"][2];
+		$endYValue = $chartDetails["graphRange"][3];
+		
+		$instanceX = false;
+		$instanceY = false;
+		$x = [];
+		$y = [];
+		
+		foreach($xValues as $instance => $thisXValue) {
+			$thisYValue = "";
+			if(array_key_exists($instance,$yValues)) {
+				$thisYValue = $yValues[$instance];
+			}
+			
+			if($thisXValue === "" || $thisYValue === "") {
+				continue;
+			}
+			
+			$thisX = round($startX + ($xWidth / ($endXValue - $startXValue)) * ($thisXValue - $startXValue));
+			$thisY = round($startY + ($yWidth / ($endYValue - $startYValue)) * ($thisYValue - $startYValue));
+
+			$x[] = $thisX;
+			$y[] = $thisY;
+			
+			if($instance == $thisInstance) {
+				$instanceX = $thisX;
+				$instanceY = $thisY;
+			}
+		}
+		
+		return [$instanceX,$instanceY,$x,$y];
 	}
 
 	## Source: https://stackoverflow.com/questions/11603228/z-score-to-percentile-in-php
