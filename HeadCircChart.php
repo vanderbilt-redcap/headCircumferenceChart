@@ -318,8 +318,14 @@ class HeadCircChart extends AbstractExternalModule
 			$headL = $row[$headers["_headc_l"]];
 			$headM = $row[$headers["_headc_m"]];
 			$headS = $row[$headers["_headc_s"]];
+			$heightL = $row[$headers["_len_l"]];
+			$heightM = $row[$headers["_len_m"]];
+			$heightS = $row[$headers["_len_s"]];
+			$weightL = $row[$headers["_wei_l"]];
+			$weightM = $row[$headers["_wei_m"]];
+			$weightS = $row[$headers["_wei_s"]];
 			
-			$data[$sex][$ageDays] = [$headL,$headM,$headS];
+			$data[$sex][$ageDays] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
 		}
 		
 		return $data;
