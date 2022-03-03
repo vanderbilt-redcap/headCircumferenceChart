@@ -24,13 +24,13 @@ class HeadCircChart extends AbstractExternalModule
 		"height" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_height_boys.PNG",
-				"pixelRange" => [60,71,406,578],
+				"pixelRange" => [59,71,403,578],
 				"graphRange" => [0,36,41,106],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_height_girls.PNG",
-				"pixelRange" => [61,69,406,578],
+				"pixelRange" => [60,69,405,577],
 				"graphRange" => [0,36,30,53],
 				"logic" => [["sex","=","2"]]
 			]
@@ -38,13 +38,13 @@ class HeadCircChart extends AbstractExternalModule
 		"weight" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_weight_boys.PNG",
-				"pixelRange" => [52,66,416,606],
+				"pixelRange" => [51,68,414,604],
 				"graphRange" => [0,36,1.5,19],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_weight_girls.PNG",
-				"pixelRange" => [51,70,416,606],
+				"pixelRange" => [51,70,412,602],
 				"graphRange" => [0,36,1.5,19],
 				"logic" => [["sex","=","2"]]
 			]
