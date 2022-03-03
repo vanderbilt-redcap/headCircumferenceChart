@@ -105,7 +105,7 @@
 	  },
 	  {
 		"key": "debug-mode",
-		"name": "Enable debug mode for testing",
+		"name": "Enable debug mode for image area calibration",
 		"type": "checkbox"
 	  }
 	]
