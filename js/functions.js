@@ -4,10 +4,10 @@ function insertImageChart(type,type2,field,x,y,xHistory,yHistory,debug) {
     image.onload = function() {
         $("#" + field + "-tr").after(
             "<tr><td class='labelrc' colspan='2'>" +
-            "<canvas id='headCircCanvas' height='" + image.height + "' width='" + image.width + "' />" +
+            "<canvas id='headCircCanvas" + type + "' height='" + image.height + "' width='" + image.width + "' />" +
             "</td></tr>"
         );
-        let canvas = document.getElementById("headCircCanvas");
+        let canvas = document.getElementById("headCircCanvas" + type + "");
         let context = canvas.getContext('2d');
         context.drawImage(image,0,0);
         if(x && y) {

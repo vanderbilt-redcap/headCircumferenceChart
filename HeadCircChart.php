@@ -31,7 +31,7 @@ class HeadCircChart extends AbstractExternalModule
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_height_girls.PNG",
 				"pixelRange" => [60,69,405,577],
-				"graphRange" => [0,36,30,53],
+				"graphRange" => [0,36,41,106],
 				"logic" => [["sex","=","2"]]
 			]
 		],
@@ -221,6 +221,7 @@ class HeadCircChart extends AbstractExternalModule
 			"return_format" => "json",
 			"events" => $event_id
 		]);
+		$recordData = json_decode($recordData,true);
 		
 		$sex = false;
 		$age = false;
@@ -233,7 +234,7 @@ class HeadCircChart extends AbstractExternalModule
 				$sex = $eventDetails[$sexField];
 			}
 			
-			if($eventDetails["redcap_repeat_instrument"] == $repeat_instance) {
+			if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
 				$age = $eventDetails[$ageField];
 				$height = $eventDetails[$heightField];
 				$weight = $eventDetails[$weightField];
@@ -242,23 +243,25 @@ class HeadCircChart extends AbstractExternalModule
 		}
 		
 		$dataToSave = [
+			$this->getProject()->getRecordIdField() => $record,
 			"redcap_repeat_instance" => $repeat_instance,
-			"redcap_repeat_instrument" => $instrument,
-			"redcap_event_id" => $event_id
+			"redcap_repeat_instrument" => $instrument
 		];
 		
 		if($age !== false && $age !== "") {
 			$refData = $this->getCsvData();
-			$ageDays = round($age * 30.5);
-			$distributionData = $refData[$sex][$ageDays];
+			
+			## CDC data is on half months, so need to convert to rounded half month
+			$ageMonths = (string)(round($age - 0.5) + 0.5);
+			$distributionData = $refData[$sex][$ageMonths];
 		}
 		
 		## Calculate head circumference percentile and z-score for storage on form
 		if($circumference !== false && $circumference !== "" && ($circZscoreField || $circPercentileField)) {
 			## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
-			$zScore = (pow($circumference / $distributionData[1],$distributionData[0]) - 1) /
-				($distributionData[0]*$distributionData[2]);
-			$percentile = $this->zscoreToPercentile($zScore);
+			$zScore = round((pow($circumference / $distributionData[1],$distributionData[0]) - 1) /
+				($distributionData[0]*$distributionData[2]),3);
+			$percentile = round($this->zscoreToPercentile($zScore)*100);
 			
 			if($circZscoreField) {
 				$dataToSave[$circZscoreField] = $zScore;
@@ -271,9 +274,9 @@ class HeadCircChart extends AbstractExternalModule
 		## Calculate height percentile and z-score for storage on form
 		if($height !== false && $height !== "" && ($heightZscoreField || $heightPercentileField)) {
 			## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
-			$zScore = (pow($height / $distributionData[4],$distributionData[3]) - 1) /
-				($distributionData[3]*$distributionData[5]);
-			$percentile = $this->zscoreToPercentile($zScore);
+			$zScore = round((pow($height / $distributionData[4],$distributionData[3]) - 1) /
+				($distributionData[3]*$distributionData[5]),3);
+			$percentile = round($this->zscoreToPercentile($zScore) * 100);
 			
 			if($heightZscoreField) {
 				$dataToSave[$heightZscoreField] = $zScore;
@@ -286,9 +289,9 @@ class HeadCircChart extends AbstractExternalModule
 		## Calculate weight percentile and z-score for storage on form
 		if($weight !== false && $weight !== "" && ($weightZscoreField || $weightPercentileField)) {
 			## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
-			$zScore = (pow($weight / $distributionData[7],$distributionData[6]) - 1) /
-				($distributionData[6]*$distributionData[8]);
-			$percentile = $this->zscoreToPercentile($zScore);
+			$zScore = round((pow($weight / $distributionData[7],$distributionData[6]) - 1) /
+				($distributionData[6]*$distributionData[8]),3);
+			$percentile = round($this->zscoreToPercentile($zScore) * 100);
 			
 			if($weightZscoreField) {
 				$dataToSave[$weightZscoreField] = $zScore;
@@ -298,15 +301,18 @@ class HeadCircChart extends AbstractExternalModule
 			}
 		}
 		
-		\REDCap::saveData([
-			"dataFormat" => "json",
-			"data" => json_encode($dataToSave),
-			"project_id" => $project_id
-		]);
+		if(count($dataToSave) > 3) {
+			$results = \REDCap::saveData([
+				"dataFormat" => "json",
+				"data" => json_encode([$dataToSave]),
+				"project_id" => $project_id
+			]);
+			error_log("Save data results: ".var_export($results,true));
+		}
 	}
 	
 	function getCsvData() {
-		$f = fopen(__DIR__."/data/WHOref_d.csv","r");
+		$f = fopen(__DIR__."/data/cdcref.csv","r");
 		
 		$headers = fgetcsv($f);
 		$headers = array_flip($headers);
@@ -314,18 +320,18 @@ class HeadCircChart extends AbstractExternalModule
 		
 		while($row = fgetcsv($f)) {
 			$sex = $row[$headers["sex"]];
-			$ageDays = $row[$headers["_agedays"]];
-			$headL = $row[$headers["_headc_l"]];
-			$headM = $row[$headers["_headc_m"]];
-			$headS = $row[$headers["_headc_s"]];
-			$heightL = $row[$headers["_len_l"]];
-			$heightM = $row[$headers["_len_m"]];
-			$heightS = $row[$headers["_len_s"]];
-			$weightL = $row[$headers["_wei_l"]];
-			$weightM = $row[$headers["_wei_m"]];
-			$weightS = $row[$headers["_wei_s"]];
+			$ageMonths = $row[$headers["agemos"]];
+			$headL = $row[$headers["_hcirc_l"]];
+			$headM = $row[$headers["_hcirc_m"]];
+			$headS = $row[$headers["_hcirc_s"]];
+			$heightL = $row[$headers["_height_l"]];
+			$heightM = $row[$headers["_height_m"]];
+			$heightS = $row[$headers["_height_s"]];
+			$weightL = $row[$headers["_weight_l"]];
+			$weightM = $row[$headers["_weight_m"]];
+			$weightS = $row[$headers["_weight_s"]];
 			
-			$data[$sex][$ageDays] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
+			$data[$sex][$ageMonths] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
 		}
 		
 		return $data;
