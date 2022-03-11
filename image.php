@@ -1,4 +1,5 @@
-<?php
+<?
+## TODO Make type names consistent
 $chartType = $_GET["type"];
 $fileId = $_GET["type2"];
 

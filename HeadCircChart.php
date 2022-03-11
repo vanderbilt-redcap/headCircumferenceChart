@@ -204,6 +204,7 @@ class HeadCircChart extends AbstractExternalModule
 	function redcap_save_record($project_id,$record,$instrument,$event_id,$gorup_id,$survey_hash,$response_id,$repeat_instance) {
 		$sexField = $this->getProjectSetting("sex-field");
 		$ageField = $this->getProjectSetting("age-field");
+		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
 		$heightField = $this->getProjectSetting("height-field");
 		$weightField = $this->getProjectSetting("weight-field");
 		$circumferenceField = $this->getProjectSetting("circumference-field");
@@ -217,7 +218,7 @@ class HeadCircChart extends AbstractExternalModule
 		$recordData = \REDCap::getData([
 			"records" => $record,
 			"project_id" => $project_id,
-			"fields" => [$sexField,$ageField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
+			"fields" => [$sexField,$ageField,$gestationalAgeField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
 			"return_format" => "json",
 			"events" => $event_id
 		]);
@@ -225,6 +226,7 @@ class HeadCircChart extends AbstractExternalModule
 		
 		$sex = false;
 		$age = false;
+		$gestationalAge = false;
 		$circumference = false;
 		$height = false;
 		$weight = false;
@@ -232,6 +234,9 @@ class HeadCircChart extends AbstractExternalModule
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
 				$sex = $eventDetails[$sexField];
+			}
+			if($eventDetails[$gestationalAgeField] !== "") {
+				$gestationalAge = $eventDetails[$gestationalAgeField];
 			}
 			
 			if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
@@ -251,9 +256,30 @@ class HeadCircChart extends AbstractExternalModule
 		if($age !== false && $age !== "") {
 			$refData = $this->getCsvData();
 			
-			## CDC data is on half months, so need to convert to rounded half month
-			$ageMonths = (string)(round($age - 0.5) + 0.5);
-			$distributionData = $refData[$sex][$ageMonths];
+			## Correct Age for premature children
+			if($gestationalAge && $gestationalAge <= 36) {
+				$age -= (40 - $gestationalAge) * 7 / 30.5;
+			}
+		
+			if($gestationalAge && $gestationalAge <= 36 && (($age * 30.5 / 7) + 40) < 50) {
+				## Premature data is denoted by "1" being prepended to sex
+				$sex = "1".$sex;
+				$ageWeeks = round($age * 30.5 / 7) + 40;
+				$distributionData = $refData[$sex][$ageWeeks];
+				
+				## Premature benchmark data is in grams
+				if($weight) {
+					$weight *= 1000;
+				}
+				
+				error_log("Found premature, using $ageWeeks vs $gestationalAge vs $age and $sex");
+				error_log(var_export($distributionData,true));
+			}
+			else {
+				## CDC data is on half months, so need to convert to rounded half month
+				$ageMonths = (string)(round($age - 0.5) + 0.5);
+				$distributionData = $refData[$sex][$ageMonths];
+			}
 		}
 		
 		## Calculate head circumference percentile and z-score for storage on form
@@ -307,7 +333,7 @@ class HeadCircChart extends AbstractExternalModule
 				"data" => json_encode([$dataToSave]),
 				"project_id" => $project_id
 			]);
-			error_log("Save data results: ".var_export($results,true));
+//			error_log("Save data results: ".var_export($results,true));
 		}
 	}
 	
@@ -320,7 +346,9 @@ class HeadCircChart extends AbstractExternalModule
 		
 		while($row = fgetcsv($f)) {
 			$sex = $row[$headers["sex"]];
+			$premature = $row[$headers["premature"]];
 			$ageMonths = $row[$headers["agemos"]];
+			$ageWeeks = $row[$headers["ageweeks"]];
 			$headL = $row[$headers["_hcirc_l"]];
 			$headM = $row[$headers["_hcirc_m"]];
 			$headS = $row[$headers["_hcirc_s"]];
@@ -331,7 +359,13 @@ class HeadCircChart extends AbstractExternalModule
 			$weightM = $row[$headers["_weight_m"]];
 			$weightS = $row[$headers["_weight_s"]];
 			
-			$data[$sex][$ageMonths] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
+			## Premature data is in weeks instead of months
+			if($premature == "1") {
+				$data[$premature.$sex][$ageWeeks] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
+			}
+		else {
+				$data[$sex][$ageMonths] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
+			}
 		}
 		
 		return $data;
