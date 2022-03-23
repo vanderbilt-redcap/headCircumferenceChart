@@ -264,21 +264,24 @@ class HeadCircChart extends AbstractExternalModule
 			if($gestationalAge && $gestationalAge <= 36 && (($age * 30.5 / 7) + 40) < 50) {
 				## Premature data is denoted by "1" being prepended to sex
 				$sex = "1".$sex;
-				$ageWeeks = round($age * 30.5 / 7) + 40;
-				$distributionData = $refData[$sex][$ageWeeks];
+				$ageDays = (string)round(($age + 40) * 30.5);
+				$distributionData = $refData[$sex][$ageDays];
 				
 				## Premature benchmark data is in grams
 				if($weight) {
 					$weight *= 1000;
 				}
 				
-				error_log("Found premature, using $ageWeeks vs $gestationalAge vs $age and $sex");
+				error_log("Found premature, using $ageDays vs $gestationalAge vs $age and $sex");
 				error_log(var_export($distributionData,true));
 			}
 			else {
-				## CDC data is on half months, so need to convert to rounded half month
-				$ageMonths = (string)(round($age - 0.5) + 0.5);
-				$distributionData = $refData[$sex][$ageMonths];
+//				## CDC data is on half months, so need to convert to rounded half month
+//				$ageMonths = (string)(round($age - 0.5) + 0.5);
+//				$distributionData = $refData[$sex][$ageMonths];
+				
+				$ageDays = (string)(round($age * 30.5));
+				$distributionData = $refData[$sex][$ageDays];
 			}
 		}
 		
@@ -338,7 +341,8 @@ class HeadCircChart extends AbstractExternalModule
 	}
 	
 	function getCsvData() {
-		$f = fopen(__DIR__."/data/cdcref.csv","r");
+//		$f = fopen(__DIR__."/data/cdcref.csv","r");
+		$f = fopen(__DIR__."/data/WHOref_d.csv.csv","r");
 		
 		$headers = fgetcsv($f);
 		$headers = array_flip($headers);
@@ -346,26 +350,42 @@ class HeadCircChart extends AbstractExternalModule
 		
 		while($row = fgetcsv($f)) {
 			$sex = $row[$headers["sex"]];
-			$premature = $row[$headers["premature"]];
-			$ageMonths = $row[$headers["agemos"]];
-			$ageWeeks = $row[$headers["ageweeks"]];
-			$headL = $row[$headers["_hcirc_l"]];
-			$headM = $row[$headers["_hcirc_m"]];
-			$headS = $row[$headers["_hcirc_s"]];
-			$heightL = $row[$headers["_height_l"]];
-			$heightM = $row[$headers["_height_m"]];
-			$heightS = $row[$headers["_height_s"]];
-			$weightL = $row[$headers["_weight_l"]];
-			$weightM = $row[$headers["_weight_m"]];
-			$weightS = $row[$headers["_weight_s"]];
 			
-			## Premature data is in weeks instead of months
-			if($premature == "1") {
-				$data[$premature.$sex][$ageWeeks] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
-			}
-		else {
-				$data[$sex][$ageMonths] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
-			}
+			## Parsing info for CDC Ref data
+//			$premature = $row[$headers["premature"]];
+//			$ageMonths = $row[$headers["agemos"]];
+//			$ageWeeks = $row[$headers["ageweeks"]];
+//			$headL = $row[$headers["_hcirc_l"]];
+//			$headM = $row[$headers["_hcirc_m"]];
+//			$headS = $row[$headers["_hcirc_s"]];
+//			$heightL = $row[$headers["_height_l"]];
+//			$heightM = $row[$headers["_height_m"]];
+//			$heightS = $row[$headers["_height_s"]];
+//			$weightL = $row[$headers["_weight_l"]];
+//			$weightM = $row[$headers["_weight_m"]];
+//			$weightS = $row[$headers["_weight_s"]];
+//			## Premature data is in weeks instead of months
+//			if($premature == "1") {
+//				$data[$premature.$sex][$ageWeeks] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
+//			}
+//			else {
+//				$data[$sex][$ageMonths] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
+//			}
+			
+			## Parsing info for WHO Ref data
+			$premature = $row[$headers["premature"]];
+			$ageDays = $row[$headers["_agedays"]];
+			$headL = $row[$headers["_headc_l"]];
+			$headM = $row[$headers["_headc_m"]];
+			$headS = $row[$headers["_headc_s"]];
+			$heightL = $row[$headers["_len_l"]];
+			$heightM = $row[$headers["_len_m"]];
+			$heightS = $row[$headers["_len_s"]];
+			$weightL = $row[$headers["_wei_l"]];
+			$weightM = $row[$headers["_wei_m"]];
+			$weightS = $row[$headers["_wei_s"]];
+			
+			$data[$premature.$sex][$ageDays] = [$headL,$headM,$headS,$heightL,$heightM,$heightS,$weightL,$weightM,$weightS];
 		}
 		
 		return $data;
