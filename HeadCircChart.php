@@ -247,9 +247,15 @@ class HeadCircChart extends AbstractExternalModule
 			
 			if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
 				$age = $eventDetails[$ageField];
-				$height = $eventDetails[$heightField];
-				$weight = $eventDetails[$weightField];
-				$circumference = $eventDetails[$circumferenceField];
+				if($heightField) {
+					$height = $eventDetails[$heightField];
+				}
+				if($weightField) {
+					$weight = $eventDetails[$weightField];
+				}
+				if($circumferenceField) {
+					$circumference = $eventDetails[$circumferenceField];
+				}
 			}
 		}
 		
