@@ -56,6 +56,8 @@ class HeadCircChart extends AbstractExternalModule
 		$heightChartField = $this->getProjectSetting("height-chart-field");
 		$weightChartField = $this->getProjectSetting("weight-chart-field");
 		$sexField = $this->getProjectSetting("sex-field");
+		$femaleValue = $this->getProjectSetting("female-value");
+		$maleValue = $this->getProjectSetting("male-value");
 		$ageField = $this->getProjectSetting("age-field");
 		$heightField = $this->getProjectSetting("height-field");
 		$weightField = $this->getProjectSetting("weight-field");
@@ -75,7 +77,7 @@ class HeadCircChart extends AbstractExternalModule
 		$weightInstrument = $this->getProject()->getFormForField($weightChartField);
 		
 		## Process head circumference, height and weight data
-		if($sexField && $ageField) {
+		if($sexField && $ageField && $femaleValue && $maleValue) {
 			echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
 			<script type='text/javascript'>
 					var imagePath = '".$this->getUrl("image.php")."';
@@ -90,7 +92,8 @@ class HeadCircChart extends AbstractExternalModule
 			
 			foreach($recordData as $eventDetails) {
 				if($eventDetails[$sexField] !== "") {
-					$sex = $eventDetails[$sexField];
+					$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
+						($eventDetails[$sexField] === (string)$maleValue ? "1" : false));
 				}
 				
 				if($eventDetails["redcap_repeat_instrument"] == $instrument) {
@@ -203,6 +206,8 @@ class HeadCircChart extends AbstractExternalModule
 	
 	function redcap_save_record($project_id,$record,$instrument,$event_id,$gorup_id,$survey_hash,$response_id,$repeat_instance) {
 		$sexField = $this->getProjectSetting("sex-field");
+		$femaleValue = $this->getProjectSetting("female-value");
+		$maleValue = $this->getProjectSetting("male-value");
 		$ageField = $this->getProjectSetting("age-field");
 		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
 		$heightField = $this->getProjectSetting("height-field");
@@ -233,7 +238,8 @@ class HeadCircChart extends AbstractExternalModule
 		
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
-				$sex = $eventDetails[$sexField];
+				$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
+					($eventDetails[$sexField] === (string)$maleValue ? "1" : false));
 			}
 			if($eventDetails[$gestationalAgeField] !== "") {
 				$gestationalAge = $eventDetails[$gestationalAgeField];
@@ -253,7 +259,7 @@ class HeadCircChart extends AbstractExternalModule
 			"redcap_repeat_instrument" => $instrument
 		];
 		
-		if($age !== false && $age !== "") {
+		if($age !== false && $age !== "" && $sex !== false) {
 			$refData = $this->getCsvData();
 			
 			## Correct Age for premature children
@@ -272,8 +278,8 @@ class HeadCircChart extends AbstractExternalModule
 					$weight *= 1000;
 				}
 				
-				error_log("Found premature, using $ageDays vs $gestationalAge vs $age and $sex");
-				error_log(var_export($distributionData,true));
+//				error_log("Found premature, using $ageDays vs $gestationalAge vs $age and $sex");
+//				error_log(var_export($distributionData,true));
 			}
 			else {
 //				## CDC data is on half months, so need to convert to rounded half month
@@ -282,6 +288,8 @@ class HeadCircChart extends AbstractExternalModule
 				
 				$ageDays = (string)(round($age * 30.5));
 				$distributionData = $refData[$sex][$ageDays];
+//				error_log("Found term birth, using $ageDays vs $gestationalAge vs $age and $sex");
+//				error_log(var_export($distributionData,true));
 			}
 		}
 		
@@ -342,7 +350,7 @@ class HeadCircChart extends AbstractExternalModule
 	
 	function getCsvData() {
 //		$f = fopen(__DIR__."/data/cdcref.csv","r");
-		$f = fopen(__DIR__."/data/WHOref_d.csv.csv","r");
+		$f = fopen(__DIR__."/data/WHOref_d.csv","r");
 		
 		$headers = fgetcsv($f);
 		$headers = array_flip($headers);

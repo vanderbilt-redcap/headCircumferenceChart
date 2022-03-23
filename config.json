@@ -49,6 +49,16 @@
 		"type": "field-list"
 	  },
 	  {
+		"key": "male-value",
+		"name": "Raw coded value for Male",
+		"type": "text"
+	  },
+	  {
+		"key": "female-value",
+		"name": "Raw coded value for Female",
+		"type": "text"
+	  },
+	  {
 		"key": "age-field",
 		"name": "Field for child's age (in months)",
 		"type": "field-list"
