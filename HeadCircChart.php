@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\HeadCircChart;
 
+use Aws\Panorama\PanoramaClient;
 use ExternalModules\AbstractExternalModule;
 
 class HeadCircChart extends AbstractExternalModule
@@ -90,6 +91,48 @@ class HeadCircChart extends AbstractExternalModule
 				"graphRange" => [0,36,1.5,19],
 				"logic" => [["sex","=","2"]]
 			]
+		],
+		"headCirc_fenton" => [
+			"boys" => [
+				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_head_circ_boys.PNG",
+				"pixelRange" => [102,52,951,558],
+				"graphRange" => [24,50,15,45],
+				"logic" => [["sex","=","1"]]
+			],
+			"girls" => [
+				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_head_circ_girls.PNG",
+				"pixelRange" => [102,53,950,558],
+				"graphRange" => [24,50,15,45],
+				"logic" => [["sex","=","2"]]
+			]
+		],
+		"height_fenton" => [
+			"boys" => [
+				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_height_boys.PNG",
+				"pixelRange" => [85,55,951,559],
+				"graphRange" => [24,50,20,65],
+				"logic" => [["sex","=","1"]]
+			],
+			"girls" => [
+				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_height_girls.PNG",
+				"pixelRange" => [80,56,950,557],
+				"graphRange" => [24,50,20,65],
+				"logic" => [["sex","=","2"]]
+			]
+		],
+		"weight_fenton" => [
+			"boys" => [
+				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_weight_boys.PNG",
+				"pixelRange" => [100,53,950,560],
+				"graphRange" => [23,50,0,8],
+				"logic" => [["sex","=","1"]]
+			],
+			"girls" => [
+				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_weight_girls.PNG",
+				"pixelRange" => [100,53,950,558],
+				"graphRange" => [23,50,0,7],
+				"logic" => [["sex","=","2"]]
+			]
 		]
 	];
 	
@@ -98,6 +141,7 @@ class HeadCircChart extends AbstractExternalModule
 		$heightChartField = $this->getProjectSetting("height-chart-field");
 		$weightChartField = $this->getProjectSetting("weight-chart-field");
 		$sexField = $this->getProjectSetting("sex-field");
+		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
 		$femaleValue = $this->getProjectSetting("female-value");
 		$maleValue = $this->getProjectSetting("male-value");
 		$ageField = $this->getProjectSetting("age-field");
@@ -109,7 +153,7 @@ class HeadCircChart extends AbstractExternalModule
 		$recordData = \REDCap::getData([
 			"records" => $record,
 			"project_id" => $project_id,
-			"fields" => [$sexField,$ageField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
+			"fields" => [$sexField,$ageField,$circumferenceField,$gestationalAgeField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
 			"return_format" => "json",
 			"events" => $event_id
 		]);
@@ -130,6 +174,8 @@ class HeadCircChart extends AbstractExternalModule
 			$height = [];
 			$weight = [];
 			$sex = false;
+			$gestationalAge = false;
+			$thisAge = false;
 			$chartType = false;
 			
 			foreach($recordData as $eventDetails) {
@@ -137,10 +183,17 @@ class HeadCircChart extends AbstractExternalModule
 					$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
 						($eventDetails[$sexField] === (string)$maleValue ? "1" : false));
 				}
+				if($eventDetails[$gestationalAgeField] !== "") {
+					$gestationalAge = $eventDetails[$gestationalAgeField];
+				}
 				
 				if($eventDetails["redcap_repeat_instrument"] == $instrument) {
 					if($eventDetails[$ageField] !== "") {
 						$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
+						
+						if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
+							$thisAge = $eventDetails[$ageField];
+						}
 					}
 					if($circumferenceField && $eventDetails[$circumferenceField] !== "") {
 						$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
@@ -154,10 +207,28 @@ class HeadCircChart extends AbstractExternalModule
 				}
 			}
 			
+			## Correct Age for premature children
+			if($gestationalAge && $gestationalAge <= 36) {
+				$thisAge -= (40 - $gestationalAge) * 7 / 30.5;
+			}
+			
+			$useFentonChart = false;
+			if($gestationalAge && $gestationalAge <= 36 && (($thisAge * 30.5 / 7) + 40) < 50) {
+				foreach($age as $ageKey => $ageValue) {
+					$age[$ageKey] = $gestationalAge + $ageValue * 30.5 / 7;
+				}
+				$useFentonChart = true;
+			}
+			
 			## Insert head circumference chart if data exists
 			if(count($circumference) > 0 && $headChartField && $instrument == $circInstrument) {
 				$chartDetails = false;
-				foreach(self::$imageDetails["headCirc"] as $thisType => $thisImage) {
+				
+				$chartName = "headCirc";
+				if($useFentonChart) {
+					$chartName .= "_fenton";
+				}
+				foreach(self::$imageDetails[$chartName] as $thisType => $thisImage) {
 					foreach($thisImage["logic"] as $thisLogic) {
 						$logicVar = $thisLogic[0];
 						if($$logicVar !== $thisLogic[2]) {
@@ -173,13 +244,14 @@ class HeadCircChart extends AbstractExternalModule
 				if($chartDetails) {
 					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$circumference,$repeat_instance);
 					
+					echo "Trying to use Fenton Chart $instanceX ~ ".$circumference[0]." ~ ".$age[0]."<br />";
 					$debugDetails = false;
 					if($debugMode) {
 						$debugDetails = $chartDetails["pixelRange"];
 					}
 					
 					echo "<script type='text/javascript'>
-								$(document).ready(function() { insertImageChart('headCirc','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+								$(document).ready(function() { insertImageChart('".$chartName."','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
 						</script>";
 				}
 			}
@@ -187,7 +259,12 @@ class HeadCircChart extends AbstractExternalModule
 			## Insert height chart if data exists
 			if(count($height) > 0 && $heightChartField && $instrument == $heightInstrument) {
 				$chartDetails = false;
-				foreach(self::$imageDetails["height"] as $thisType => $thisImage) {
+				
+				$chartName = "height";
+				if($useFentonChart) {
+					$chartName .= "_fenton";
+				}
+				foreach(self::$imageDetails[$chartName] as $thisType => $thisImage) {
 					foreach($thisImage["logic"] as $thisLogic) {
 						$logicVar = $thisLogic[0];
 						if($$logicVar !== $thisLogic[2]) {
@@ -209,7 +286,7 @@ class HeadCircChart extends AbstractExternalModule
 					}
 					
 					echo "<script type='text/javascript'>
-								$(document).ready(function() { insertImageChart('height','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+								$(document).ready(function() { insertImageChart('".$chartName."','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
 						</script>";
 				}
 			}
@@ -217,7 +294,13 @@ class HeadCircChart extends AbstractExternalModule
 			## Insert weight chart if data exists
 			if(count($weight) > 0 && $weightChartField && $instrument == $weightInstrument) {
 				$chartDetails = false;
-				foreach(self::$imageDetails["weight"] as $thisType => $thisImage) {
+				
+				$chartName = "weight";
+				if($useFentonChart) {
+					$chartName .= "_fenton";
+				}
+				
+				foreach(self::$imageDetails[$chartName] as $thisType => $thisImage) {
 					foreach($thisImage["logic"] as $thisLogic) {
 						$logicVar = $thisLogic[0];
 						if($$logicVar !== $thisLogic[2]) {
@@ -239,7 +322,7 @@ class HeadCircChart extends AbstractExternalModule
 					}
 					
 					echo "<script type='text/javascript'>
-								$(document).ready(function() { insertImageChart('weight','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+								$(document).ready(function() { insertImageChart('".$chartName."','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
 						</script>";
 				}
 			}
