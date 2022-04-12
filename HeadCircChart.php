@@ -395,13 +395,13 @@ class HeadCircChart extends AbstractExternalModule
 			
 			## Correct Age for premature children
 			if($gestationalAge && $gestationalAge <= 36) {
-				$age -= (40 - $gestationalAge) * 7 / 30.5;
+				$correctedAge = $gestationalAge + ($age * 30.5 / 7);
 			}
 		
-			if($gestationalAge && $gestationalAge <= 36 && (($age * 30.5 / 7) + 40) < 50) {
+			if($gestationalAge && $gestationalAge <= 36 && $correctedAge < 50) {
 				## Premature data is denoted by "1" being prepended to sex
 				$sex = "1".$sex;
-				$ageDays = (string)round(($age + 40) * 30.5);
+				$ageDays = (string)round($correctedAge * 7);
 				$distributionData = $refData[$sex][$ageDays];
 				
 				## Premature benchmark data is in grams
@@ -409,7 +409,7 @@ class HeadCircChart extends AbstractExternalModule
 					$weight *= 1000;
 				}
 				
-//				error_log("Found premature, using $ageDays vs $gestationalAge vs $age and $sex");
+//				error_log("Found premature, using $ageDays vs $gestationalAge vs $correctedAge and $sex");
 //				error_log(var_export($distributionData,true));
 			}
 			else {
@@ -424,58 +424,60 @@ class HeadCircChart extends AbstractExternalModule
 			}
 		}
 		
-		## Calculate head circumference percentile and z-score for storage on form
-		if($circumference !== false && $circumference !== "" && ($circZscoreField || $circPercentileField)) {
-			## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
-			$zScore = round((pow($circumference / $distributionData[1],$distributionData[0]) - 1) /
-				($distributionData[0]*$distributionData[2]),3);
-			$percentile = round($this->zscoreToPercentile($zScore)*100);
+		if(count($distributionData) > 0) {
+			## Calculate head circumference percentile and z-score for storage on form
+			if($circumference !== false && $circumference !== "" && ($circZscoreField || $circPercentileField)) {
+				## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
+				$zScore = round((pow($circumference / $distributionData[1],$distributionData[0]) - 1) /
+					($distributionData[0]*$distributionData[2]),3);
+				$percentile = round($this->zscoreToPercentile($zScore)*100);
+				
+				if($circZscoreField) {
+					$dataToSave[$circZscoreField] = $zScore;
+				}
+				if($circPercentileField) {
+					$dataToSave[$circPercentileField] = $percentile;
+				}
+			}
 			
-			if($circZscoreField) {
-				$dataToSave[$circZscoreField] = $zScore;
+			## Calculate height percentile and z-score for storage on form
+			if($height !== false && $height !== "" && ($heightZscoreField || $heightPercentileField)) {
+				## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
+				$zScore = round((pow($height / $distributionData[4],$distributionData[3]) - 1) /
+					($distributionData[3]*$distributionData[5]),3);
+				$percentile = round($this->zscoreToPercentile($zScore) * 100);
+				
+				if($heightZscoreField) {
+					$dataToSave[$heightZscoreField] = $zScore;
+				}
+				if($heightPercentileField) {
+					$dataToSave[$heightPercentileField] = $percentile;
+				}
 			}
-			if($circPercentileField) {
-				$dataToSave[$circPercentileField] = $percentile;
-			}
-		}
-		
-		## Calculate height percentile and z-score for storage on form
-		if($height !== false && $height !== "" && ($heightZscoreField || $heightPercentileField)) {
-			## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
-			$zScore = round((pow($height / $distributionData[4],$distributionData[3]) - 1) /
-				($distributionData[3]*$distributionData[5]),3);
-			$percentile = round($this->zscoreToPercentile($zScore) * 100);
 			
-			if($heightZscoreField) {
-				$dataToSave[$heightZscoreField] = $zScore;
+			## Calculate weight percentile and z-score for storage on form
+			if($weight !== false && $weight !== "" && ($weightZscoreField || $weightPercentileField)) {
+				## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
+				$zScore = round((pow($weight / $distributionData[7],$distributionData[6]) - 1) /
+					($distributionData[6]*$distributionData[8]),3);
+				$percentile = round($this->zscoreToPercentile($zScore) * 100);
+				
+				if($weightZscoreField) {
+					$dataToSave[$weightZscoreField] = $zScore;
+				}
+				if($weightPercentileField) {
+					$dataToSave[$weightPercentileField] = $percentile;
+				}
 			}
-			if($heightPercentileField) {
-				$dataToSave[$heightPercentileField] = $percentile;
-			}
-		}
-		
-		## Calculate weight percentile and z-score for storage on form
-		if($weight !== false && $weight !== "" && ($weightZscoreField || $weightPercentileField)) {
-			## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
-			$zScore = round((pow($weight / $distributionData[7],$distributionData[6]) - 1) /
-				($distributionData[6]*$distributionData[8]),3);
-			$percentile = round($this->zscoreToPercentile($zScore) * 100);
 			
-			if($weightZscoreField) {
-				$dataToSave[$weightZscoreField] = $zScore;
+			if(count($dataToSave) > 3) {
+				$results = \REDCap::saveData([
+					"dataFormat" => "json",
+					"data" => json_encode([$dataToSave]),
+					"project_id" => $project_id
+				]);
+//				error_log("Save data results: ".var_export($results,true));
 			}
-			if($weightPercentileField) {
-				$dataToSave[$weightPercentileField] = $percentile;
-			}
-		}
-		
-		if(count($dataToSave) > 3) {
-			$results = \REDCap::saveData([
-				"dataFormat" => "json",
-				"data" => json_encode([$dataToSave]),
-				"project_id" => $project_id
-			]);
-//			error_log("Save data results: ".var_export($results,true));
 		}
 	}
 	
