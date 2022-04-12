@@ -9,6 +9,48 @@ class HeadCircChart extends AbstractExternalModule
 	public static $imageDetails = [
 		"headCirc" => [
 			"boys" => [
+				"imageLocation" => __DIR__ . "/images/who_growth_chart_head_circ_boys.PNG",
+				"pixelRange" => [135,100,750,493],
+				"graphRange" => [0,24,30,51],
+				"logic" => [["sex","=","1"]]
+			],
+			"girls" => [
+				"imageLocation" => __DIR__ . "/images/who_growth_chart_head_circ_girls.PNG",
+				"pixelRange" => [139,105,750,495],
+				"graphRange" => [0,24,30.5,51],
+				"logic" => [["sex","=","2"]]
+			]
+		],
+		"height" => [
+			"boys" => [
+				"imageLocation" => __DIR__ . "/images/who_growth_chart_height_boys.PNG",
+				"pixelRange" => [147,113,805,515],
+				"graphRange" => [0,24,41,106],
+				"logic" => [["sex","=","1"]]
+			],
+			"girls" => [
+				"imageLocation" => __DIR__ . "/images/who_growth_chart_height_girls.PNG",
+				"pixelRange" => [147,115,806,515],
+				"graphRange" => [0,24,45,95],
+				"logic" => [["sex","=","2"]]
+			]
+		],
+		"weight" => [
+			"boys" => [
+				"imageLocation" => __DIR__ . "/images/who_growth_chart_weight_boys.PNG",
+				"pixelRange" => [146,115,806,516],
+				"graphRange" => [0,24,1.5,19],
+				"logic" => [["sex","=","1"]]
+			],
+			"girls" => [
+				"imageLocation" => __DIR__ . "/images/who_growth_chart_weight_girls.PNG",
+				"pixelRange" => [144,110,806,516],
+				"graphRange" => [0,24,1.4,15.6],
+				"logic" => [["sex","=","2"]]
+			]
+		],
+		"headCirc_cdc" => [
+			"boys" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_head_circ_boys.PNG",
 				"pixelRange" => [58,88,407,479],
 				"graphRange" => [0,36,30,53],
@@ -21,7 +63,7 @@ class HeadCircChart extends AbstractExternalModule
 				"logic" => [["sex","=","2"]]
 			]
 		],
-		"height" => [
+		"height_cdc" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_height_boys.PNG",
 				"pixelRange" => [59,71,403,578],
@@ -35,7 +77,7 @@ class HeadCircChart extends AbstractExternalModule
 				"logic" => [["sex","=","2"]]
 			]
 		],
-		"weight" => [
+		"weight_cdc" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/cdc_growth_chart_weight_boys.PNG",
 				"pixelRange" => [51,68,414,604],
