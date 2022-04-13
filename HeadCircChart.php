@@ -161,9 +161,8 @@ class HeadCircChart extends AbstractExternalModule
 		$circInstrument = $this->getProject()->getFormForField($headChartField);
 		$heightInstrument = $this->getProject()->getFormForField($heightChartField);
 		$weightInstrument = $this->getProject()->getFormForField($weightChartField);
-		
 		## Process head circumference, height and weight data
-		if($sexField && $ageField && $femaleValue && $maleValue) {
+		if($sexField && $ageField && $femaleValue !== "" && $maleValue !== "") {
 			echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
 			<script type='text/javascript'>
 					var imagePath = '".$this->getUrl("image.php")."';
