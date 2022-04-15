@@ -95,13 +95,13 @@ class HeadCircChart extends AbstractExternalModule
 		"headCirc_fenton" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_head_circ_boys.PNG",
-				"pixelRange" => [102,52,951,558],
+				"pixelRange" => [95,57,951,558],
 				"graphRange" => [24,50,15,45],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_head_circ_girls.PNG",
-				"pixelRange" => [102,53,950,558],
+				"pixelRange" => [99,54,950,558],
 				"graphRange" => [24,50,15,45],
 				"logic" => [["sex","=","2"]]
 			]
@@ -109,13 +109,13 @@ class HeadCircChart extends AbstractExternalModule
 		"height_fenton" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_height_boys.PNG",
-				"pixelRange" => [85,55,951,559],
+				"pixelRange" => [94,47,951,559],
 				"graphRange" => [24,50,20,65],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_height_girls.PNG",
-				"pixelRange" => [80,56,950,557],
+				"pixelRange" => [100,53,950,557],
 				"graphRange" => [24,50,20,65],
 				"logic" => [["sex","=","2"]]
 			]
@@ -123,13 +123,13 @@ class HeadCircChart extends AbstractExternalModule
 		"weight_fenton" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_weight_boys.PNG",
-				"pixelRange" => [100,53,950,560],
+				"pixelRange" => [100,51,950,560],
 				"graphRange" => [23,50,0,8],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_weight_girls.PNG",
-				"pixelRange" => [100,53,950,558],
+				"pixelRange" => [99,54,950,558],
 				"graphRange" => [23,50,0,7],
 				"logic" => [["sex","=","2"]]
 			]
@@ -217,6 +217,11 @@ class HeadCircChart extends AbstractExternalModule
 					$age[$ageKey] = $gestationalAge + $ageValue * 30.5 / 7;
 				}
 				$useFentonChart = true;
+			}
+			else if($gestationalAge && $gestationalAge <= 36) {
+				foreach($age as $ageKey => $ageValue) {
+					$age[$ageKey] = ($gestationalAge - 40) * 7 / 30.5 + $ageValue;
+				}
 			}
 			
 			## Insert head circumference chart if data exists
@@ -397,17 +402,22 @@ class HeadCircChart extends AbstractExternalModule
 				$correctedAge = $gestationalAge + ($age * 30.5 / 7);
 			}
 		
-			if($gestationalAge && $gestationalAge <= 36 && $correctedAge < 50) {
-				## Premature data is denoted by "1" being prepended to sex
-				$sex = "1".$sex;
-				$ageDays = (string)round($correctedAge * 7);
-				$distributionData = $refData[$sex][$ageDays];
-				
-				## Premature benchmark data is in grams
-				if($weight) {
-					$weight *= 1000;
+			if($gestationalAge && $gestationalAge <= 36) {
+				if($correctedAge < 50) {
+					## Premature data is denoted by "1" being prepended to sex
+					$sex = "1".$sex;
+					$ageDays = (string)round($correctedAge * 7);
+					$distributionData = $refData[$sex][$ageDays];
+					
+					## Premature benchmark data is in grams
+					if($weight) {
+						$weight *= 1000;
+					}
 				}
-				
+				else {
+					$ageDays = (string)(round(($gestationalAge - 40) * 7 + $age * 30.5));
+					$distributionData = $refData[$sex][$ageDays];
+				}
 //				error_log("Found premature, using $ageDays vs $gestationalAge vs $correctedAge and $sex");
 //				error_log(var_export($distributionData,true));
 			}
