@@ -12,7 +12,7 @@ class HeadCircChart extends AbstractExternalModule
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/who_growth_chart_head_circ_boys.PNG",
 				"pixelRange" => [135,100,750,493],
-				"graphRange" => [0,24,30,51],
+				"graphRange" => [0,24,31.5,52],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
@@ -26,7 +26,7 @@ class HeadCircChart extends AbstractExternalModule
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/who_growth_chart_height_boys.PNG",
 				"pixelRange" => [147,113,805,515],
-				"graphRange" => [0,24,41,106],
+				"graphRange" => [0,24,45,95],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
@@ -40,7 +40,7 @@ class HeadCircChart extends AbstractExternalModule
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/who_growth_chart_weight_boys.PNG",
 				"pixelRange" => [146,115,806,516],
-				"graphRange" => [0,24,1.5,19],
+				"graphRange" => [0,24,1.4,16.6],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
