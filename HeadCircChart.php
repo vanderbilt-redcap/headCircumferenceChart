@@ -95,13 +95,13 @@ class HeadCircChart extends AbstractExternalModule
 		"headCirc_fenton" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_head_circ_boys.PNG",
-				"pixelRange" => [95,57,951,558],
+				"pixelRange" => [81,54,951,558],
 				"graphRange" => [24,50,15,45],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_head_circ_girls.PNG",
-				"pixelRange" => [99,54,950,558],
+				"pixelRange" => [82,54,951,558],
 				"graphRange" => [24,50,15,45],
 				"logic" => [["sex","=","2"]]
 			]
@@ -109,13 +109,13 @@ class HeadCircChart extends AbstractExternalModule
 		"height_fenton" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_height_boys.PNG",
-				"pixelRange" => [94,47,951,559],
+				"pixelRange" => [84,58,951,559],
 				"graphRange" => [24,50,20,65],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_height_girls.PNG",
-				"pixelRange" => [100,53,950,557],
+				"pixelRange" => [79,52,950,557],
 				"graphRange" => [24,50,20,65],
 				"logic" => [["sex","=","2"]]
 			]
@@ -123,13 +123,13 @@ class HeadCircChart extends AbstractExternalModule
 		"weight_fenton" => [
 			"boys" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_weight_boys.PNG",
-				"pixelRange" => [100,51,950,560],
+				"pixelRange" => [80,52,950,560],
 				"graphRange" => [23,50,0,8],
 				"logic" => [["sex","=","1"]]
 			],
 			"girls" => [
 				"imageLocation" => __DIR__ . "/images/fenton_growth_chart_weight_girls.PNG",
-				"pixelRange" => [99,54,950,558],
+				"pixelRange" => [72,53,951,558],
 				"graphRange" => [23,50,0,7],
 				"logic" => [["sex","=","2"]]
 			]
