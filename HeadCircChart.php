@@ -562,7 +562,11 @@ class HeadCircChart extends AbstractExternalModule
 				$thisYValue = $yValues[$instance];
 			}
 			
-			if($thisXValue === "" || $thisYValue === "") {
+			if($thisXValue === "" || $thisYValue === "" ||
+					($thisYValue < $startYValue) ||
+					($thisYValue > $endYValue) ||
+					($thisXValue < $startXValue) ||
+					($thisXValue > $endXValue)) {
 				continue;
 			}
 			
