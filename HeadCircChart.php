@@ -163,10 +163,15 @@ class HeadCircChart extends AbstractExternalModule
 		$weightInstrument = $this->getProject()->getFormForField($weightChartField);
 		## Process head circumference, height and weight data
 		if($sexField && $ageField && $femaleValue !== "" && $maleValue !== "") {
-			echo "<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>
-			<script type='text/javascript'>
-					var imagePath = '".$this->getUrl("image.php")."';
-			</script>";
+			echo "<script type='text/javascript'>
+					var HCC_Image_Path = '".$this->getUrl("image.php")."';
+					var HCC_Update_Path = '".$this->getUrl("updateImage.php")."';
+                    var HCC_Age_Field = ".json_encode($ageField).";
+                    var HCC_Height_Field = ".json_encode($heightField).";
+                    var HCC_Weight_Field = ".json_encode($weightField)."
+                    var HCC_Circ_Field = ".json_encode($circumferenceField).";
+			</script>
+			<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>";
 			
 			$age = [];
 			$circumference = [];
@@ -226,110 +231,53 @@ class HeadCircChart extends AbstractExternalModule
 			
 			## Insert head circumference chart if data exists
 			if(count($circumference) > 0 && $headChartField && $instrument == $circInstrument) {
-				$chartDetails = false;
-				
-				$chartName = "headCirc";
-				if($useFentonChart) {
-					$chartName .= "_fenton";
-				}
-				foreach(self::$imageDetails[$chartName] as $thisType => $thisImage) {
-					foreach($thisImage["logic"] as $thisLogic) {
-						$logicVar = $thisLogic[0];
-						if($$logicVar !== $thisLogic[2]) {
-							continue 2;
-						}
-					}
-					
-					$chartType2 = $thisType;
-					$chartDetails = $thisImage;
-					break;
-				}
-				
-				if($chartDetails) {
-					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$circumference,$repeat_instance);
-					
-					echo "Trying to use Fenton Chart $instanceX ~ ".$circumference[0]." ~ ".$age[0]."<br />";
-					$debugDetails = false;
-					if($debugMode) {
-						$debugDetails = $chartDetails["pixelRange"];
-					}
-					
-					echo "<script type='text/javascript'>
-								$(document).ready(function() { insertImageChart('".$chartName."','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
-						</script>";
-				}
+				$this->addChartToDataEntryForm("headCirc",$useFentonChart,$age,$circumference,$repeat_instance,$debugMode);
 			}
 			
 			## Insert height chart if data exists
 			if(count($height) > 0 && $heightChartField && $instrument == $heightInstrument) {
-				$chartDetails = false;
-				
-				$chartName = "height";
-				if($useFentonChart) {
-					$chartName .= "_fenton";
-				}
-				foreach(self::$imageDetails[$chartName] as $thisType => $thisImage) {
-					foreach($thisImage["logic"] as $thisLogic) {
-						$logicVar = $thisLogic[0];
-						if($$logicVar !== $thisLogic[2]) {
-							continue 2;
-						}
-					}
-					
-					$chartType2 = $thisType;
-					$chartDetails = $thisImage;
-					break;
-				}
-				
-				if($chartDetails) {
-					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$height,$repeat_instance);
-					
-					$debugDetails = false;
-					if($debugMode) {
-						$debugDetails = $chartDetails["pixelRange"];
-					}
-					
-					echo "<script type='text/javascript'>
-								$(document).ready(function() { insertImageChart('".$chartName."','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
-						</script>";
-				}
+				$this->addChartToDataEntryForm("height",$useFentonChart,$age,$height,$repeat_instance,$debugMode);
 			}
 			
 			## Insert weight chart if data exists
 			if(count($weight) > 0 && $weightChartField && $instrument == $weightInstrument) {
-				$chartDetails = false;
-				
-				$chartName = "weight";
-				if($useFentonChart) {
-					$chartName .= "_fenton";
-				}
-				
-				foreach(self::$imageDetails[$chartName] as $thisType => $thisImage) {
-					foreach($thisImage["logic"] as $thisLogic) {
-						$logicVar = $thisLogic[0];
-						if($$logicVar !== $thisLogic[2]) {
-							continue 2;
-						}
-					}
-					
-					$chartType2 = $thisType;
-					$chartDetails = $thisImage;
-					break;
-				}
-				
-				if($chartDetails) {
-					list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$weight,$repeat_instance);
-					
-					$debugDetails = false;
-					if($debugMode) {
-						$debugDetails = $chartDetails["pixelRange"];
-					}
-					
-					echo "<script type='text/javascript'>
-								$(document).ready(function() { insertImageChart('".$chartName."','".$chartType2."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
-						</script>";
+				$this->addChartToDataEntryForm("weight",$useFentonChart,$age,$weight,$repeat_instance,$debugMode);
+			}
+		}
+	}
+	
+	function addChartToDataEntryForm($chartType,$useFentonChart,$age,$values,$repeat_instance,$debugMode) {
+		$chartSex = "";
+		$chartDataSet = "";
+		$chartDetails = false;
+		if($useFentonChart) {
+			$chartDataSet .= "_fenton";
+		}
+		
+		foreach(self::$imageDetails[$chartType.$chartDataSet] as $thisSex => $thisImage) {
+			foreach($thisImage["logic"] as $thisLogic) {
+				$logicVar = $thisLogic[0];
+				if($$logicVar !== $thisLogic[2]) {
+					continue 2;
 				}
 			}
+			
+			$chartSex = $thisSex;
+			$chartDetails = $thisImage;
+			break;
+		}
+		
+		if($chartDetails) {
+			list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$values,$repeat_instance);
+			
+			$debugDetails = false;
+			if($debugMode) {
+				$debugDetails = $chartDetails["pixelRange"];
+			}
+			
+			echo "<script type='text/javascript'>
+					$(document).ready(function() { insertImageChart('".$chartType."','".$chartSex."','".$chartDataSet."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+				</script>";
 		}
 	}
 	
