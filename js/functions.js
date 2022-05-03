@@ -75,6 +75,7 @@ function ajaxCallUpdateChart(chartType) {
                 event: urlParams.get("event_id"),
                 instrument: urlParams.get("page"),
                 repeatInstance: urlParams.get("instance"),
+                chartType: chartType,
                 age: currentAge
             },
             dataType: "json"
@@ -100,17 +101,22 @@ $(document).ready(function() {
     }
     if(HCC_Age_Field !== null) {
         currentAge = $("input[name='" + HCC_Age_Field + "']").val();
-        $("input[name='" + HCC_Age_Field + "']").change(function() {
-            currentAge = $("input[name='" + HCC_Age_Field + "']").val();
-            if(HCC_Height_Field !== null) {
-                ajaxCallUpdateChart("height");
+        var oldDoBranching = calcChangeCheck;
+        calcChangeCheck = function(a,b,field) {
+            oldDoBranching(a,b,field);
+            if(field == HCC_Age_Field) {
+                currentAge = $("input[name='" + HCC_Age_Field + "']").val();
+
+                if(HCC_Height_Field !== null) {
+                    ajaxCallUpdateChart("height");
+                }
+                if(HCC_Weight_Field !== null) {
+                    ajaxCallUpdateChart("weight");
+                }
+                if(HCC_Circ_Field !== null) {
+                    ajaxCallUpdateChart("headCirc");
+                }
             }
-            if(HCC_Weight_Field !== null) {
-                ajaxCallUpdateChart("weight");
-            }
-            if(HCC_Circ_Field !== null) {
-                ajaxCallUpdateChart("headCirc");
-            }
-        });
+        }
     }
 });

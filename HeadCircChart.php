@@ -181,7 +181,7 @@ class HeadCircChart extends AbstractExternalModule
 		}
 	}
 	
-	function getChartDataForRecord($projectId,$record,$eventId,$instrument,$repeatInstance) {
+	function getChartDataForRecord($projectId,$record,$eventId,$instrument,$repeatInstance,$tempAge = false,$tempValue = false,$tempType = false) {
 		$sexField = $this->getProjectSetting("sex-field");
 		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
 		$femaleValue = $this->getProjectSetting("female-value");
@@ -197,6 +197,8 @@ class HeadCircChart extends AbstractExternalModule
 			return [false,[],[],[],[],false];
 		}
 		
+		$foundInstance = false;
+		
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
 				$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
@@ -211,7 +213,14 @@ class HeadCircChart extends AbstractExternalModule
 					$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
 					
 					if($eventDetails["redcap_repeat_instance"] == $repeatInstance) {
-						$thisAge = $eventDetails[$ageField];
+						$foundInstance = true;
+						if(!$tempAge) {
+							$thisAge = $eventDetails[$ageField];
+						}
+						else {
+							$thisAge = $tempAge;
+							$age[$eventDetails["redcap_repeat_instance"]] = $tempAge;
+						}
 					}
 				}
 				if($circumferenceField && $eventDetails[$circumferenceField] !== "") {
@@ -223,6 +232,33 @@ class HeadCircChart extends AbstractExternalModule
 				if($weightField && $eventDetails[$weightField] !== "") {
 					$weight[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$weightField];
 				}
+				
+				if($tempValue && $tempType && $eventDetails["redcap_repeat_instance"] == $repeatInstance) {
+					$foundInstance = true;
+					if($tempType == "headCirc" && $eventDetails[$circumferenceField] !== false) {
+						$circumference[$eventDetails["redcap_repeat_instance"]] = $tempValue;
+					}
+					if($tempType == "height" && $eventDetails[$circumferenceField] !== false) {
+						$height[$eventDetails["redcap_repeat_instance"]] = $tempValue;
+					}
+					if($tempType == "weight" && $eventDetails[$circumferenceField] !== false) {
+						$weight[$eventDetails["redcap_repeat_instance"]] = $tempValue;
+					}
+				}
+			}
+		}
+		
+		if(!$foundInstance) {
+			$thisAge = $tempAge;
+			$age[$repeatInstance] = $tempAge;
+			if($tempType == "headCirc") {
+				$circumference[$repeatInstance] = $tempValue;
+			}
+			if($tempType == "height") {
+				$circumference[$repeatInstance] = $tempValue;
+			}
+			if($tempType == "weight") {
+				$circumference[$repeatInstance] = $tempValue;
 			}
 		}
 		
