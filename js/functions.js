@@ -1,7 +1,6 @@
-// function insertImageChart(type,type2,field,x,y,xHistory,yHistory,debug) {
 function insertImageChart(chartType,chartDataSet,chartSex,field,x,y,xHistory,yHistory,debug) {
     let image = new Image();
-    // image.src = HCC_Image_Path + "&type=" + chartType + "&type2=" + type2;
+
     image.src = HCC_Image_Path + "&chartType=" + chartType + "&chartSex=" + chartSex + "&chartDataSet=" + chartDataSet;
     image.onload = function() {
         $("#" + field + "-tr").after(
@@ -56,7 +55,11 @@ function ajaxCallUpdateChart(chartType) {
     else if(chartType == "headCirc") {
         currentValue = $("input[name='" + HCC_Circ_Field + "']").val();
     }
-    alert("Current Value " + currentValue);
+
+    const queryString = window.location.search;
+    console.log(queryString);
+
+    const urlParams = new URLSearchParams(queryString);
 
     if(currentValue != "" && currentAge !== null) {
         $('#HC_' + chartType + '_Canvas').parent().parent().remove();
@@ -68,7 +71,10 @@ function ajaxCallUpdateChart(chartType) {
             },
             data: {
                 thisValue: currentValue,
-                category: category,
+                record: urlParams.get("id"),
+                event: urlParams.get("event_id"),
+                instrument: urlParams.get("page"),
+                repeatInstance: urlParams.get("instance"),
                 age: currentAge
             },
             dataType: "json"

@@ -140,29 +140,20 @@ class HeadCircChart extends AbstractExternalModule
 		$headChartField = $this->getProjectSetting("circ-chart-field");
 		$heightChartField = $this->getProjectSetting("height-chart-field");
 		$weightChartField = $this->getProjectSetting("weight-chart-field");
-		$sexField = $this->getProjectSetting("sex-field");
-		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
-		$femaleValue = $this->getProjectSetting("female-value");
-		$maleValue = $this->getProjectSetting("male-value");
 		$ageField = $this->getProjectSetting("age-field");
 		$heightField = $this->getProjectSetting("height-field");
 		$weightField = $this->getProjectSetting("weight-field");
 		$circumferenceField = $this->getProjectSetting("circumference-field");
 		$debugMode = $this->getProjectSetting("debug-mode");
 		
-		$recordData = \REDCap::getData([
-			"records" => $record,
-			"project_id" => $project_id,
-			"fields" => [$sexField,$ageField,$circumferenceField,$gestationalAgeField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
-			"return_format" => "json",
-			"events" => $event_id
-		]);
-		$recordData = json_decode($recordData,true);
+		list($sex,$age,$circumference,$height,$weight,$useFentonChart) = $this->getChartDataForRecord($project_id,$record,$event_id,$instrument,$repeat_instance);
+		
 		$circInstrument = $this->getProject()->getFormForField($headChartField);
 		$heightInstrument = $this->getProject()->getFormForField($heightChartField);
 		$weightInstrument = $this->getProject()->getFormForField($weightChartField);
+		
 		## Process head circumference, height and weight data
-		if($sexField && $ageField && $femaleValue !== "" && $maleValue !== "") {
+		if(count($age) > 0) {
 			echo "<script type='text/javascript'>
 					var HCC_Image_Path = '".$this->getUrl("image.php")."';
 					var HCC_Update_Path = '".$this->getUrl("updateImage.php")."';
@@ -173,80 +164,90 @@ class HeadCircChart extends AbstractExternalModule
 			</script>
 			<script type='text/javascript' src='".$this->getUrl("js/functions.js")."'></script>";
 			
-			$age = [];
-			$circumference = [];
-			$height = [];
-			$weight = [];
-			$sex = false;
-			$gestationalAge = false;
-			$thisAge = false;
-			$chartType = false;
-			
-			foreach($recordData as $eventDetails) {
-				if($eventDetails[$sexField] !== "") {
-					$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
-						($eventDetails[$sexField] === (string)$maleValue ? "1" : false));
-				}
-				if($eventDetails[$gestationalAgeField] !== "") {
-					$gestationalAge = $eventDetails[$gestationalAgeField];
-				}
-				
-				if($eventDetails["redcap_repeat_instrument"] == $instrument) {
-					if($eventDetails[$ageField] !== "") {
-						$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
-						
-						if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
-							$thisAge = $eventDetails[$ageField];
-						}
-					}
-					if($circumferenceField && $eventDetails[$circumferenceField] !== "") {
-						$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
-					}
-					if($heightField && $eventDetails[$heightField] !== "") {
-						$height[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$heightField];
-					}
-					if($weightField && $eventDetails[$weightField] !== "") {
-						$weight[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$weightField];
-					}
-				}
-			}
-			
-			## Correct Age for premature children
-			if($gestationalAge && $gestationalAge <= 36) {
-				$thisAge -= (40 - $gestationalAge) * 7 / 30.5;
-			}
-			
-			$useFentonChart = false;
-			if($gestationalAge && $gestationalAge <= 36 && (($thisAge * 30.5 / 7) + 40) < 50) {
-				foreach($age as $ageKey => $ageValue) {
-					$age[$ageKey] = $gestationalAge + $ageValue * 30.5 / 7;
-				}
-				$useFentonChart = true;
-			}
-			else if($gestationalAge && $gestationalAge <= 36) {
-				foreach($age as $ageKey => $ageValue) {
-					$age[$ageKey] = ($gestationalAge - 40) * 7 / 30.5 + $ageValue;
-				}
-			}
-			
 			## Insert head circumference chart if data exists
 			if(count($circumference) > 0 && $headChartField && $instrument == $circInstrument) {
-				$this->addChartToDataEntryForm("headCirc",$useFentonChart,$age,$circumference,$repeat_instance,$debugMode);
+				$this->addChartToDataEntryForm($sex,"headCirc",$useFentonChart,$age,$circumference,$repeat_instance,$headChartField,$debugMode);
 			}
 			
 			## Insert height chart if data exists
 			if(count($height) > 0 && $heightChartField && $instrument == $heightInstrument) {
-				$this->addChartToDataEntryForm("height",$useFentonChart,$age,$height,$repeat_instance,$debugMode);
+				$this->addChartToDataEntryForm($sex,"height",$useFentonChart,$age,$height,$repeat_instance,$heightChartField,$debugMode);
 			}
 			
 			## Insert weight chart if data exists
 			if(count($weight) > 0 && $weightChartField && $instrument == $weightInstrument) {
-				$this->addChartToDataEntryForm("weight",$useFentonChart,$age,$weight,$repeat_instance,$debugMode);
+				$this->addChartToDataEntryForm($sex,"weight",$useFentonChart,$age,$weight,$repeat_instance,$weightChartField,$debugMode);
 			}
 		}
 	}
 	
-	function addChartToDataEntryForm($chartType,$useFentonChart,$age,$values,$repeat_instance,$debugMode) {
+	function getChartDataForRecord($projectId,$record,$eventId,$instrument,$repeatInstance) {
+		$sexField = $this->getProjectSetting("sex-field");
+		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
+		$femaleValue = $this->getProjectSetting("female-value");
+		$maleValue = $this->getProjectSetting("male-value");
+		$ageField = $this->getProjectSetting("age-field");
+		$heightField = $this->getProjectSetting("height-field");
+		$weightField = $this->getProjectSetting("weight-field");
+		$circumferenceField = $this->getProjectSetting("circumference-field");
+		
+		$recordData = $this->getRecordData($projectId,$record,$eventId);
+		
+		if($femaleValue === "" || $maleValue === "" || $sexField === "" || $ageField === "") {
+			return [false,[],[],[],[],false];
+		}
+		
+		foreach($recordData as $eventDetails) {
+			if($eventDetails[$sexField] !== "") {
+				$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
+					($eventDetails[$sexField] === (string)$maleValue ? "1" : false));
+			}
+			if($eventDetails[$gestationalAgeField] !== "") {
+				$gestationalAge = $eventDetails[$gestationalAgeField];
+			}
+			
+			if($eventDetails["redcap_repeat_instrument"] == $instrument) {
+				if($eventDetails[$ageField] !== "") {
+					$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
+					
+					if($eventDetails["redcap_repeat_instance"] == $repeatInstance) {
+						$thisAge = $eventDetails[$ageField];
+					}
+				}
+				if($circumferenceField && $eventDetails[$circumferenceField] !== "") {
+					$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
+				}
+				if($heightField && $eventDetails[$heightField] !== "") {
+					$height[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$heightField];
+				}
+				if($weightField && $eventDetails[$weightField] !== "") {
+					$weight[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$weightField];
+				}
+			}
+		}
+		
+		## Correct Age for premature children
+		if($gestationalAge && $gestationalAge <= 36) {
+			$thisAge -= (40 - $gestationalAge) * 7 / 30.5;
+		}
+		
+		$useFentonChart = false;
+		if($gestationalAge && $gestationalAge <= 36 && (($thisAge * 30.5 / 7) + 40) < 50) {
+			foreach($age as $ageKey => $ageValue) {
+				$age[$ageKey] = $gestationalAge + $ageValue * 30.5 / 7;
+			}
+			$useFentonChart = true;
+		}
+		else if($gestationalAge && $gestationalAge <= 36) {
+			foreach($age as $ageKey => $ageValue) {
+				$age[$ageKey] = ($gestationalAge - 40) * 7 / 30.5 + $ageValue;
+			}
+		}
+		
+		return [$sex,$age,$circumference,$height,$weight,$useFentonChart];
+	}
+	
+	function addChartToDataEntryForm($sex,$chartType,$useFentonChart,$age,$values,$repeat_instance,$chartField,$debugMode) {
 		$chartSex = "";
 		$chartDataSet = "";
 		$chartDetails = false;
@@ -276,12 +277,12 @@ class HeadCircChart extends AbstractExternalModule
 			}
 			
 			echo "<script type='text/javascript'>
-					$(document).ready(function() { insertImageChart('".$chartType."','".$chartSex."','".$chartDataSet."',".json_encode($headChartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
+					$(document).ready(function() { insertImageChart('".$chartType."','".$chartDataSet."','".$chartSex."',".json_encode($chartField).",".json_encode($instanceX).",".json_encode($instanceY).",".json_encode($x).",",json_encode($y).",".json_encode($debugDetails)."); });
 				</script>";
 		}
 	}
 	
-	function redcap_save_record($project_id,$record,$instrument,$event_id,$gorup_id,$survey_hash,$response_id,$repeat_instance) {
+	function redcap_save_record($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance) {
 		$sexField = $this->getProjectSetting("sex-field");
 		$femaleValue = $this->getProjectSetting("female-value");
 		$maleValue = $this->getProjectSetting("male-value");
@@ -297,14 +298,7 @@ class HeadCircChart extends AbstractExternalModule
 		$weightZscoreField = $this->getProjectSetting("weight-zscore-field");
 		$weightPercentileField = $this->getProjectSetting("weight-percentile-field");
 		
-		$recordData = \REDCap::getData([
-			"records" => $record,
-			"project_id" => $project_id,
-			"fields" => [$sexField,$ageField,$gestationalAgeField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
-			"return_format" => "json",
-			"events" => $event_id
-		]);
-		$recordData = json_decode($recordData,true);
+		$recordData = $this->getRecordData($project_id, $record, $event_id);
 		
 		$sex = false;
 		$age = false;
@@ -436,6 +430,26 @@ class HeadCircChart extends AbstractExternalModule
 //				error_log("Save data results: ".var_export($results,true));
 			}
 		}
+	}
+	
+	function getRecordData($projectId, $record, $eventId) {
+		$sexField = $this->getProjectSetting("sex-field");
+		$ageField = $this->getProjectSetting("age-field");
+		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
+		$heightField = $this->getProjectSetting("height-field");
+		$weightField = $this->getProjectSetting("weight-field");
+		$circumferenceField = $this->getProjectSetting("circumference-field");
+		
+		$recordData = \REDCap::getData([
+			"records" => $record,
+			"project_id" => $projectId,
+			"fields" => [$sexField,$ageField,$gestationalAgeField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
+			"return_format" => "json",
+			"events" => $eventId
+		]);
+		$recordData = json_decode($recordData,true);
+		
+		return $recordData;
 	}
 	
 	function getCsvData() {
