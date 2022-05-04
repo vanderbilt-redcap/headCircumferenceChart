@@ -1,13 +1,14 @@
-function insertImageChart(type,type2,field,x,y,xHistory,yHistory,debug) {
+function insertImageChart(chartType,chartDataSet,chartSex,field,x,y,xHistory,yHistory,debug) {
     let image = new Image();
-    image.src = imagePath + "&type=" + type + "&type2=" + type2;
+
+    image.src = HCC_Image_Path + "&chartType=" + chartType + "&chartSex=" + chartSex + "&chartDataSet=" + chartDataSet;
     image.onload = function() {
         $("#" + field + "-tr").after(
             "<tr><td class='labelrc' colspan='2'>" +
-            "<canvas id='headCircCanvas" + type + "' height='" + image.height + "' width='" + image.width + "' />" +
+            "<canvas id='HC_" + chartType + "_Canvas' height='" + image.height + "' width='" + image.width + "' />" +
             "</td></tr>"
         );
-        let canvas = document.getElementById("headCircCanvas" + type + "");
+        let canvas = document.getElementById('HC_' + chartType + '_Canvas');
         let context = canvas.getContext('2d');
         context.drawImage(image,0,0);
         if(x && y) {
@@ -37,5 +38,86 @@ function insertImageChart(type,type2,field,x,y,xHistory,yHistory,debug) {
             context.stroke();
         }
     }
-
 }
+
+var currentAge = null;
+
+function ajaxCallUpdateChart(chartType) {
+
+    currentAge = $("input[name='" + HCC_Age_Field + "']").val();
+
+    let currentValue = false;
+    if(chartType == "height") {
+        currentValue = $("input[name='" + HCC_Height_Field + "']").val();
+    }
+    else if(chartType == "weight") {
+        currentValue = $("input[name='" + HCC_Weight_Field + "']").val();
+    }
+    else if(chartType == "headCirc") {
+        currentValue = $("input[name='" + HCC_Circ_Field + "']").val();
+    }
+
+    const queryString = window.location.search;
+    console.log(queryString);
+
+    const urlParams = new URLSearchParams(queryString);
+
+    if(currentValue != "" && currentAge !== null) {
+        $('#HC_' + chartType + '_Canvas').parent().parent().remove();
+        $.ajax({
+            url: HCC_Update_Path,
+            type: "POST",
+            success: function(values) {
+                insertImageChart(values.chartType,values.chartDataSet,values.chartSex,values.field,values.x,values.y,values.xHistory,values.yHistory,values.debug);
+            },
+            data: {
+                thisValue: currentValue,
+                record: urlParams.get("id"),
+                event: urlParams.get("event_id"),
+                instrument: urlParams.get("page"),
+                repeatInstance: urlParams.get("instance"),
+                chartType: chartType,
+                age: currentAge
+            },
+            dataType: "json"
+        });
+    }
+}
+
+$(document).ready(function() {
+    if(HCC_Height_Field !== null) {
+        $("input[name='" + HCC_Height_Field + "']").blur(function() {
+            ajaxCallUpdateChart("height");
+        });
+    }
+    if(HCC_Weight_Field !== null) {
+        $("input[name='" + HCC_Weight_Field + "']").blur(function() {
+            ajaxCallUpdateChart("weight");
+        });
+    }
+    if(HCC_Circ_Field !== null) {
+        $("input[name='" + HCC_Circ_Field + "']").blur(function() {
+            ajaxCallUpdateChart("headCirc");
+        });
+    }
+    if(HCC_Age_Field !== null) {
+        currentAge = $("input[name='" + HCC_Age_Field + "']").val();
+        var oldDoBranching = calcChangeCheck;
+        calcChangeCheck = function(a,b,field) {
+            oldDoBranching(a,b,field);
+            if(field == HCC_Age_Field) {
+                currentAge = $("input[name='" + HCC_Age_Field + "']").val();
+
+                if(HCC_Height_Field !== null) {
+                    ajaxCallUpdateChart("height");
+                }
+                if(HCC_Weight_Field !== null) {
+                    ajaxCallUpdateChart("weight");
+                }
+                if(HCC_Circ_Field !== null) {
+                    ajaxCallUpdateChart("headCirc");
+                }
+            }
+        }
+    }
+});
