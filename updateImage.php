@@ -8,7 +8,7 @@ if($userRights !== NULL) {
 	$event = $_POST['event'];
 	$instrument = $_POST['instrument'];
 	$repeatInstance = $_POST['repeatInstance'];
-	$age = $_POST['age'];
+	$thisAge = $_POST['age'];
 	$thisValue = $_POST['thisValue'];
 	$chartType = $_POST['chartType'];
 	
@@ -17,7 +17,7 @@ if($userRights !== NULL) {
 	}
 	
 	list($sex,$age,$circumference,$height,$weight,$useFentonChart) =
-		$module->getChartDataForRecord($project_id,$record,$event,$instrument,$repeatInstance,$age,$thisValue,$chartType);
+		$module->getChartDataForRecord($project_id,$record,$event,$instrument,$repeatInstance,$thisAge,$thisValue,$chartType);
 	
 	$headChartField = $module->getProjectSetting("circ-chart-field");
 	$heightChartField = $module->getProjectSetting("height-chart-field");

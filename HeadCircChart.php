@@ -191,10 +191,17 @@ class HeadCircChart extends AbstractExternalModule
 		$weightField = $this->getProjectSetting("weight-field");
 		$circumferenceField = $this->getProjectSetting("circumference-field");
 		
+		$sex  = false;
+		$age = [];
+		$circumference = [];
+		$height = [];
+		$weight = [];
+		$useFentonChart = false;
+		
 		$recordData = $this->getRecordData($projectId,$record,$eventId);
 		
 		if($femaleValue === "" || $maleValue === "" || $sexField === "" || $ageField === "") {
-			return [false,[],[],[],[],false];
+			return [$sex,$age,$circumference,$height,$weight,$useFentonChart];
 		}
 		
 		$foundInstance = false;
@@ -267,7 +274,6 @@ class HeadCircChart extends AbstractExternalModule
 			$thisAge -= (40 - $gestationalAge) * 7 / 30.5;
 		}
 		
-		$useFentonChart = false;
 		if($gestationalAge && $gestationalAge <= 36 && (($thisAge * 30.5 / 7) + 40) < 50) {
 			foreach($age as $ageKey => $ageValue) {
 				$age[$ageKey] = $gestationalAge + $ageValue * 30.5 / 7;

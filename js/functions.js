@@ -44,7 +44,8 @@ var currentAge = null;
 
 function ajaxCallUpdateChart(chartType) {
 
-    // TODO Need to remove old chart before adding new chart
+    currentAge = $("input[name='" + HCC_Age_Field + "']").val();
+
     let currentValue = false;
     if(chartType == "height") {
         currentValue = $("input[name='" + HCC_Height_Field + "']").val();
