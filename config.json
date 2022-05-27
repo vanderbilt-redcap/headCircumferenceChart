@@ -59,13 +59,13 @@
 		"type": "text"
 	  },
 	  {
-		"key": "age-field",
-		"name": "Field for child's age (in months)",
+		"key": "gestational-age-field",
+		"name": "Field for gestational age at birth (in weeks)",
 		"type": "field-list"
 	  },
 	  {
-		"key": "gestational-age-field",
-		"name": "Field for gestational age at birth (in weeks)",
+		"key": "age-field",
+		"name": "Field for child's age (in months)",
 		"type": "field-list"
 	  },
 	  {
@@ -80,7 +80,7 @@
 	  },
 	  {
 		"key": "circumference-field",
-		"name": "Field for head circumference",
+		"name": "Field for child's head circumference",
 		"type": "field-list"
 	  },
 	  {
