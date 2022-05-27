@@ -11,8 +11,11 @@ if($userRights !== NULL) {
 	$thisAge = $_POST['age'];
 	$thisValue = $_POST['thisValue'];
 	$chartType = $_POST['chartType'];
+	if(!in_array($chartType,["headCirc","weight","height"])) {
+		$chartType = false;
+	}
 	
-	if(!$record) {
+	if(!$record || !$chartType) {
 		die();
 	}
 	

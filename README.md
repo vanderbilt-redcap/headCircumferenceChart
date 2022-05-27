@@ -1,4 +1,4 @@
-# CDC Weight/Length/Head Circumference Charts
+# WHO Weight/Length/Head Circumference Charts
 Inserts a chart for typical head circumference/height/weight into REDCap form and marks the current record's location on the chart based on age/head circumference.
 
 ## Configuration
