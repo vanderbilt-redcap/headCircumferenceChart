@@ -10,8 +10,14 @@ if($userRights !== NULL) {
 	$repeatInstance = $_POST['repeatInstance'];
 	$thisAge = $_POST['age'];
 	$thisValue = $_POST['thisValue'];
-	if(in_array($_POST['chartType'],["headCirc","weight","height"])) {
-		$chartType = $_POST['chartType'];
+	if($_POST['chartType']  == "headCirc") {
+		$chartType = "headCirc";
+	}
+	elseif($_POST['chartType'] == "weight") {
+		$chartType = "weight";
+	}
+	elseif($_POST['chartType'] == "height") {
+		$chartType = "height";
 	}
 	else {
 		$chartType = false;
