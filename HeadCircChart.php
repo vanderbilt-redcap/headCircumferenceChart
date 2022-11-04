@@ -348,6 +348,7 @@ class HeadCircChart extends AbstractExternalModule
 		$circumference = false;
 		$height = false;
 		$weight = false;
+		$distributionData = false;
 		
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
@@ -384,9 +385,7 @@ class HeadCircChart extends AbstractExternalModule
 			## Correct Age for premature children
 			if($gestationalAge && $gestationalAge <= 36) {
 				$correctedAge = $gestationalAge + ($age * 30.5 / 7);
-			}
-		
-			if($gestationalAge && $gestationalAge <= 36) {
+				
 				if($correctedAge < 50) {
 					## Premature data is denoted by "1" being prepended to sex
 					$sex = "1".$sex;
@@ -417,7 +416,7 @@ class HeadCircChart extends AbstractExternalModule
 			}
 		}
 		
-		if(count($distributionData) > 0) {
+		if($distributionData && count($distributionData) > 0) {
 			## Calculate head circumference percentile and z-score for storage on form
 			if($circumference !== false && $circumference !== "" && ($circZscoreField || $circPercentileField)) {
 				## Formula for zscore:  Z = [ ((value / M)**L) – 1] / (S * L)
