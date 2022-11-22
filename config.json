@@ -3,7 +3,7 @@
 
 	"namespace": "Vanderbilt\\HeadCircChart",
 
-	"description": "Inserts a chart for typical head circumference (must be uploaded) into REDCap form and marks the current record's location on the chart based on age/head circumference.",
+	"description": "Inserts a chart for typical head circumference/weight/height into REDCap form and marks the current record's location on the chart based on age/head circumference/height/weight using WHO reference data and Fenton data for premature babies. CDC Data is available in the code, but isn't currently being used by the module.",
 
     "authors": [
         {
