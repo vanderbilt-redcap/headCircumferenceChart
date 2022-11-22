@@ -1,4 +1,4 @@
-<?
+<?php
 ## TODO Make type names consistent
 $chartType = $_GET["chartType"];
 $chartSex = $_GET["chartSex"];
