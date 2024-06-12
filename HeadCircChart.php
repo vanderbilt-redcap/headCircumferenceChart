@@ -372,7 +372,7 @@ class HeadCircChart extends AbstractExternalModule
 				}
 			}
 		}
-		
+		## TODO Need to validate the height, weight and circumference are integers
 		$dataToSave = [
 			$this->getProject()->getRecordIdField() => $record,
 			"redcap_repeat_instance" => $repeat_instance,
