@@ -7,6 +7,9 @@ use ExternalModules\AbstractExternalModule;
 
 class HeadCircChart extends AbstractExternalModule
 {
+	// NOTE: this cannot be set in a constructor because REDCap::isLongitudinal may only be called in a project context
+	public $isLong = false;
+
 	public static $imageDetails = [
 		"headCirc" => [
 			"boys" => [
@@ -137,6 +140,8 @@ class HeadCircChart extends AbstractExternalModule
 	];
 	
 	function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
+		$this->isLong = \REDCap::isLongitudinal();
+
 		$headChartField = $this->getProjectSetting("circ-chart-field");
 		$heightChartField = $this->getProjectSetting("height-chart-field");
 		$weightChartField = $this->getProjectSetting("weight-chart-field");
@@ -182,6 +187,7 @@ class HeadCircChart extends AbstractExternalModule
 	}
 	
 	function getChartDataForRecord($projectId,$record,$eventId,$instrument,$repeatInstance,$tempAge = false,$tempValue = false,$tempType = false) {
+		$this->isLong = \REDCap::isLongitudinal();
 		$highlightedDatumIndex = $repeatInstance;
 
 		$sexField = $this->getProjectSetting("sex-field");
@@ -256,9 +262,36 @@ class HeadCircChart extends AbstractExternalModule
 					}
 				}
 			}
+			elseif ($this->isLong) {
+				// copied from Records::getData as Proj object form $this->framework->getProject does not have getUniqueEventNames function
+				$Proj = new \Project(PROJECT_ID);
+				$event_label = $Proj->getUniqueEventNames()[$eventId];
+
+				if ($event_label == $eventDetails["redcap_event_name"]) {
+					if ($tempType) {
+						${'temp' . ucfirst($tempType)} = $tempValue;
+					}
+					$thisAge = $eventDetails[$ageField];
+					$highlightedDatumIndex = $i;
+				} else {
+					// reset tempAge to prevent adding all y values at same x axis location
+					$tempAge = false;
+					// reset values to prevent overriding all future y axis values
+					$tempCircumference = false;
+					$tempHeight = false;
+					$tempWeight = false;
+				}
+
+				$age[$i] = ($tempAge) ?: $eventDetails[$ageField];
+				$circumference[$i] = ($tempCircumference) ?: $eventDetails[$circumferenceField];
+				$height[$i] = ($tempHeight) ?: $eventDetails[$heightField];
+				$weight[$i] = ($tempWeight) ?: $eventDetails[$weightField];
+				$i++;
+			}
+
 		}
 		
-		if(!$foundInstance) {
+		if(!$foundInstance && !$this->isLong) {
 			$thisAge = $tempAge;
 			$age[$repeatInstance] = $tempAge;
 			if($tempType == "headCirc") {
@@ -483,14 +516,17 @@ class HeadCircChart extends AbstractExternalModule
 		$heightField = $this->getProjectSetting("height-field");
 		$weightField = $this->getProjectSetting("weight-field");
 		$circumferenceField = $this->getProjectSetting("circumference-field");
-		
-		$recordData = \REDCap::getData([
+
+		$getDataParams = [
 			"records" => $record,
 			"project_id" => $projectId,
 			"fields" => [$sexField,$ageField,$gestationalAgeField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
 			"return_format" => "json",
-			"events" => $eventId
-		]);
+		];
+
+		if (!$this->isLong) { $getDataParams["events"] = $eventId; }
+
+		$recordData = \REDCap::getData($getDataParams);
 		$recordData = json_decode($recordData,true);
 		
 		return $recordData;
