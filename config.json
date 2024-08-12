@@ -27,96 +27,111 @@
 	  ]
 	},
 
-	"project-settings": [
-	  {
-		"key": "circ-chart-field",
-		"name": "Field to display head circumference chart",
-		"type": "field-list"
-	  },
-	  {
-		"key": "height-chart-field",
-		"name": "Field to display height chart",
-		"type": "field-list"
-	  },
-	  {
-		"key": "weight-chart-field",
-		"name": "Field to display weight chart",
-		"type": "field-list"
-	  },
-	  {
-		"key": "sex-field",
-		"name": "Field for child's sex",
-		"type": "field-list"
-	  },
-	  {
-		"key": "male-value",
-		"name": "Raw coded value for Male",
-		"type": "text"
-	  },
-	  {
-		"key": "female-value",
-		"name": "Raw coded value for Female",
-		"type": "text"
-	  },
-	  {
-		"key": "gestational-age-field",
-		"name": "Field for gestational age at birth (in weeks)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "age-field",
-		"name": "Field for child's age (in months)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "height-field",
-		"name": "Field for child's height",
-		"type": "field-list"
-	  },
-	  {
-		"key": "weight-field",
-		"name": "Field for child's weight",
-		"type": "field-list"
-	  },
-	  {
-		"key": "circumference-field",
-		"name": "Field for child's head circumference",
-		"type": "field-list"
-	  },
-	  {
-		"key": "circ-zscore-field",
-		"name": "Field to save head circumference zscore to (optional)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "circ-percentile-field",
-		"name": "Field to save head circumference percentile to (optional)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "height-zscore-field",
-		"name": "Field to save height zscore to (optional)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "height-percentile-field",
-		"name": "Field to save height percentile to (optional)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "weight-zscore-field",
-		"name": "Field to save weight zscore to (optional)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "weight-percentile-field",
-		"name": "Field to save weight percentile to (optional)",
-		"type": "field-list"
-	  },
-	  {
-		"key": "debug-mode",
-		"name": "Enable debug mode for image area calibration",
-		"type": "checkbox"
-	  }
-	]
+    "project-settings": [
+        {
+            "key": "circ-chart-field",
+            "name": "Field to display head circumference chart",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "height-chart-field",
+            "name": "Field to display height chart",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "weight-chart-field",
+            "name": "Field to display weight chart",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "sex-field",
+            "name": "Field for child's sex",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "male-value",
+            "name": "Raw coded value for Male",
+            "type": "text"
+        },
+        {
+            "key": "female-value",
+            "name": "Raw coded value for Female",
+            "type": "text"
+        },
+        {
+            "key": "gestational-age-field",
+            "name": "Field for gestational age at birth (in weeks)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "age-field",
+            "name": "Field for child's age (in months)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "height-field",
+            "name": "Field for child's height",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "weight-field",
+            "name": "Field for child's weight",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "circumference-field",
+            "name": "Field for child's head circumference",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "circ-zscore-field",
+            "name": "Field to save head circumference zscore to (optional)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "circ-percentile-field",
+            "name": "Field to save head circumference percentile to (optional)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "height-zscore-field",
+            "name": "Field to save height zscore to (optional)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "height-percentile-field",
+            "name": "Field to save height percentile to (optional)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "weight-zscore-field",
+            "name": "Field to save weight zscore to (optional)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "weight-percentile-field",
+            "name": "Field to save weight percentile to (optional)",
+            "type": "field-list",
+            "autocomplete": true
+        },
+        {
+            "key": "debug-mode",
+            "name": "Enable debug mode for image area calibration",
+            "type": "checkbox"
+        }
+    ]
 }

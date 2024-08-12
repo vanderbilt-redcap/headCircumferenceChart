@@ -27,7 +27,7 @@ if($userRights !== NULL) {
 		die();
 	}
 	
-	list($sex,$age,$circumference,$height,$weight,$useFentonChart) =
+	list($sex,$age,$circumference,$height,$weight,$useFentonChart, $highlightedDatumIndex) =
 		$module->getChartDataForRecord($project_id,$record,$event,$instrument,$repeatInstance,$thisAge,$thisValue,$chartType);
 	
 	$headChartField = $module->getProjectSetting("circ-chart-field");
@@ -69,7 +69,7 @@ if($userRights !== NULL) {
 	}
 	
 	if($chartDetails) {
-		list($instanceX,$instanceY,$x,$y) = $module->calculateXY($chartDetails,$age,$values,$repeatInstance);
+		list($instanceX,$instanceY,$x,$y) = $module->calculateXY($chartDetails,$age,$values,$highlightedDatumIndex);
 		
 		$returnValues = [
 			"chartType" => $chartType,

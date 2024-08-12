@@ -7,6 +7,9 @@ use ExternalModules\AbstractExternalModule;
 
 class HeadCircChart extends AbstractExternalModule
 {
+	// NOTE: this cannot be set in a constructor because REDCap::isLongitudinal may only be called in a project context
+	public $isLong = false;
+
 	public static $imageDetails = [
 		"headCirc" => [
 			"boys" => [
@@ -137,6 +140,8 @@ class HeadCircChart extends AbstractExternalModule
 	];
 	
 	function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance) {
+		$this->isLong = \REDCap::isLongitudinal();
+
 		$headChartField = $this->getProjectSetting("circ-chart-field");
 		$heightChartField = $this->getProjectSetting("height-chart-field");
 		$weightChartField = $this->getProjectSetting("weight-chart-field");
@@ -146,7 +151,7 @@ class HeadCircChart extends AbstractExternalModule
 		$circumferenceField = $this->getProjectSetting("circumference-field");
 		$debugMode = $this->getProjectSetting("debug-mode");
 		
-		list($sex,$age,$circumference,$height,$weight,$useFentonChart) = $this->getChartDataForRecord($project_id,$record,$event_id,$instrument,$repeat_instance);
+		list($sex,$age,$circumference,$height,$weight,$useFentonChart, $highlightedDatumIndex) = $this->getChartDataForRecord($project_id,$record,$event_id,$instrument,$repeat_instance);
 		
 		$circInstrument = $this->getProject()->getFormForField($headChartField);
 		$heightInstrument = $this->getProject()->getFormForField($heightChartField);
@@ -166,22 +171,25 @@ class HeadCircChart extends AbstractExternalModule
 			
 			## Insert head circumference chart if data exists
 			if(count($circumference) > 0 && $headChartField && $instrument == $circInstrument) {
-				$this->addChartToDataEntryForm($sex,"headCirc",$useFentonChart,$age,$circumference,$repeat_instance,$headChartField,$debugMode);
+				$this->addChartToDataEntryForm($sex,"headCirc",$useFentonChart,$age,$circumference,$highlightedDatumIndex,$headChartField,$debugMode);
 			}
 			
 			## Insert height chart if data exists
 			if(count($height) > 0 && $heightChartField && $instrument == $heightInstrument) {
-				$this->addChartToDataEntryForm($sex,"height",$useFentonChart,$age,$height,$repeat_instance,$heightChartField,$debugMode);
+				$this->addChartToDataEntryForm($sex,"height",$useFentonChart,$age,$height,$highlightedDatumIndex,$heightChartField,$debugMode);
 			}
 			
 			## Insert weight chart if data exists
 			if(count($weight) > 0 && $weightChartField && $instrument == $weightInstrument) {
-				$this->addChartToDataEntryForm($sex,"weight",$useFentonChart,$age,$weight,$repeat_instance,$weightChartField,$debugMode);
+				$this->addChartToDataEntryForm($sex,"weight",$useFentonChart,$age,$weight,$highlightedDatumIndex,$weightChartField,$debugMode);
 			}
 		}
 	}
 	
 	function getChartDataForRecord($projectId,$record,$eventId,$instrument,$repeatInstance,$tempAge = false,$tempValue = false,$tempType = false) {
+		$this->isLong = \REDCap::isLongitudinal();
+		$highlightedDatumIndex = $repeatInstance;
+
 		$sexField = $this->getProjectSetting("sex-field");
 		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
 		$femaleValue = $this->getProjectSetting("female-value");
@@ -199,13 +207,14 @@ class HeadCircChart extends AbstractExternalModule
 		$useFentonChart = false;
 		
 		$recordData = $this->getRecordData($projectId,$record,$eventId);
-		
+
 		if($femaleValue === "" || $maleValue === "" || $sexField === "" || $ageField === "") {
 			return [$sex,$age,$circumference,$height,$weight,$useFentonChart];
 		}
 		
 		$foundInstance = false;
 		
+		$i = 1;
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
 				$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
@@ -214,7 +223,7 @@ class HeadCircChart extends AbstractExternalModule
 			if($eventDetails[$gestationalAgeField] !== "") {
 				$gestationalAge = $eventDetails[$gestationalAgeField];
 			}
-			
+
 			if($eventDetails["redcap_repeat_instrument"] == $instrument) {
 				if($eventDetails[$ageField] !== "") {
 					$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
@@ -253,9 +262,36 @@ class HeadCircChart extends AbstractExternalModule
 					}
 				}
 			}
+			elseif ($this->isLong) {
+				// copied from Records::getData as Proj object form $this->framework->getProject does not have getUniqueEventNames function
+				$Proj = new \Project(PROJECT_ID);
+				$event_label = $Proj->getUniqueEventNames()[$eventId];
+
+				if ($event_label == $eventDetails["redcap_event_name"]) {
+					if ($tempType) {
+						${'temp' . ucfirst($tempType)} = $tempValue;
+					}
+					$thisAge = $eventDetails[$ageField];
+					$highlightedDatumIndex = $i;
+				} else {
+					// reset tempAge to prevent adding all y values at same x axis location
+					$tempAge = false;
+					// reset values to prevent overriding all future y axis values
+					$tempCircumference = false;
+					$tempHeight = false;
+					$tempWeight = false;
+				}
+
+				$age[$i] = ($tempAge) ?: $eventDetails[$ageField];
+				$circumference[$i] = ($tempCircumference) ?: $eventDetails[$circumferenceField];
+				$height[$i] = ($tempHeight) ?: $eventDetails[$heightField];
+				$weight[$i] = ($tempWeight) ?: $eventDetails[$weightField];
+				$i++;
+			}
+
 		}
 		
-		if(!$foundInstance) {
+		if(!$foundInstance && !$this->isLong) {
 			$thisAge = $tempAge;
 			$age[$repeatInstance] = $tempAge;
 			if($tempType == "headCirc") {
@@ -286,7 +322,7 @@ class HeadCircChart extends AbstractExternalModule
 			}
 		}
 		
-		return [$sex,$age,$circumference,$height,$weight,$useFentonChart];
+		return [$sex,$age,$circumference,$height,$weight,$useFentonChart, $highlightedDatumIndex];
 	}
 	
 	function addChartToDataEntryForm($sex,$chartType,$useFentonChart,$age,$values,$repeat_instance,$chartField,$debugMode) {
@@ -480,14 +516,17 @@ class HeadCircChart extends AbstractExternalModule
 		$heightField = $this->getProjectSetting("height-field");
 		$weightField = $this->getProjectSetting("weight-field");
 		$circumferenceField = $this->getProjectSetting("circumference-field");
-		
-		$recordData = \REDCap::getData([
+
+		$getDataParams = [
 			"records" => $record,
 			"project_id" => $projectId,
 			"fields" => [$sexField,$ageField,$gestationalAgeField,$circumferenceField,$heightField,$weightField,$this->getProject()->getRecordIdField()],
 			"return_format" => "json",
-			"events" => $eventId
-		]);
+		];
+
+		if (!$this->isLong) { $getDataParams["events"] = $eventId; }
+
+		$recordData = \REDCap::getData($getDataParams);
 		$recordData = json_decode($recordData,true);
 		
 		return $recordData;
