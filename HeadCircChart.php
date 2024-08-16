@@ -9,6 +9,7 @@ class HeadCircChart extends AbstractExternalModule
 {
 	// NOTE: this cannot be set in a constructor because REDCap::isLongitudinal may only be called in a project context
 	public $isLong = false;
+	const CUR_VALUE_FLAG_NAME = "headCircChartEMcurrentValueFlag";
 
 	public static $imageDetails = [
 		"headCirc" => [
@@ -187,7 +188,6 @@ class HeadCircChart extends AbstractExternalModule
 	}
 	
 	function getChartDataForRecord($projectId,$record,$eventId,$instrument,$repeatInstance,$tempAge = false,$tempValue = false,$tempType = false) {
-		$this->isLong = \REDCap::isLongitudinal();
 		$highlightedDatumIndex = $repeatInstance;
 
 		$sexField = $this->getProjectSetting("sex-field");
@@ -206,14 +206,13 @@ class HeadCircChart extends AbstractExternalModule
 		$weight = [];
 		$useFentonChart = false;
 		
-		$recordData = $this->getRecordData($projectId,$record,$eventId);
+		$recordData = $this->getRecordData($projectId,$record,$eventId, $repeatInstance);
 
 		if($femaleValue === "" || $maleValue === "" || $sexField === "" || $ageField === "") {
 			return [$sex,$age,$circumference,$height,$weight,$useFentonChart];
 		}
 		
 		$foundInstance = false;
-		
 		$i = 1;
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
@@ -224,75 +223,31 @@ class HeadCircChart extends AbstractExternalModule
 				$gestationalAge = $eventDetails[$gestationalAgeField];
 			}
 
-			if($eventDetails["redcap_repeat_instrument"] == $instrument) {
-				if($eventDetails[$ageField] !== "") {
-					$age[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$ageField];
-					
-					if($eventDetails["redcap_repeat_instance"] == $repeatInstance) {
-						$foundInstance = true;
-						if(!$tempAge) {
-							$thisAge = $eventDetails[$ageField];
-						}
-						else {
-							$thisAge = $tempAge;
-							$age[$eventDetails["redcap_repeat_instance"]] = $tempAge;
-						}
-					}
-				}
-				if($circumferenceField && $eventDetails[$circumferenceField] !== "") {
-					$circumference[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$circumferenceField];
-				}
-				if($heightField && $eventDetails[$heightField] !== "") {
-					$height[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$heightField];
-				}
-				if($weightField && $eventDetails[$weightField] !== "") {
-					$weight[$eventDetails["redcap_repeat_instance"]] = $eventDetails[$weightField];
-				}
-				
-				if($tempValue && $tempType && $eventDetails["redcap_repeat_instance"] == $repeatInstance) {
-					$foundInstance = true;
-					if($tempType == "headCirc" && $eventDetails[$circumferenceField] !== false) {
-						$circumference[$eventDetails["redcap_repeat_instance"]] = $tempValue;
-					}
-					if($tempType == "height" && $eventDetails[$circumferenceField] !== false) {
-						$height[$eventDetails["redcap_repeat_instance"]] = $tempValue;
-					}
-					if($tempType == "weight" && $eventDetails[$circumferenceField] !== false) {
-						$weight[$eventDetails["redcap_repeat_instance"]] = $tempValue;
-					}
-				}
-			}
-			elseif ($this->isLong) {
-				// copied from Records::getData as Proj object form $this->framework->getProject does not have getUniqueEventNames function
-				$Proj = new \Project(PROJECT_ID);
-				$event_label = $Proj->getUniqueEventNames()[$eventId];
+			if ($eventDetails[self::CUR_VALUE_FLAG_NAME]) {
+				$foundInstance = true;
+				$highlightedDatumIndex = $i;
+				if ($tempType) { ${'temp' . ucfirst($tempType)} = $tempValue; }
+				$thisAge = ($tempAge) ?: $eventDetails[$ageField];
 
-				if ($event_label == $eventDetails["redcap_event_name"]) {
-					if ($tempType) {
-						${'temp' . ucfirst($tempType)} = $tempValue;
-					}
-					$thisAge = $eventDetails[$ageField];
-					$highlightedDatumIndex = $i;
-				} else {
-					// reset tempAge to prevent adding all y values at same x axis location
-					$tempAge = false;
-					// reset values to prevent overriding all future y axis values
-					$tempCircumference = false;
-					$tempHeight = false;
-					$tempWeight = false;
-				}
-
-				$age[$i] = ($tempAge) ?: $eventDetails[$ageField];
-				$circumference[$i] = ($tempCircumference) ?: $eventDetails[$circumferenceField];
-				$height[$i] = ($tempHeight) ?: $eventDetails[$heightField];
-				$weight[$i] = ($tempWeight) ?: $eventDetails[$weightField];
-				$i++;
+				$highlightedAge = $thisAge;
+			} else {
+				$thisAge = $eventDetails[$ageField];
+				// reset values to prevent overriding all future y axis values
+				$tempHeadCirc = false;
+				$tempHeight = false;
+				$tempWeight = false;
 			}
 
+			$age[$i] = $thisAge;
+			$circumference[$i] = ($tempHeadCirc) ?: $eventDetails[$circumferenceField];
+			$height[$i] = ($tempHeight) ?: $eventDetails[$heightField];
+			$weight[$i] = ($tempWeight) ?: $eventDetails[$weightField];
+
+			$i++;
 		}
 		
 		if(!$foundInstance && !$this->isLong) {
-			$thisAge = $tempAge;
+			$highlightedAge = $tempAge;
 			$age[$repeatInstance] = $tempAge;
 			if($tempType == "headCirc") {
 				$circumference[$repeatInstance] = $tempValue;
@@ -307,10 +262,10 @@ class HeadCircChart extends AbstractExternalModule
 		
 		## Correct Age for premature children
 		if($gestationalAge && $gestationalAge <= 36) {
-			$thisAge -= (40 - $gestationalAge) * 7 / 30.5;
+			$highlightedAge -= (40 - $gestationalAge) * 7 / 30.5;
 		}
 		
-		if($gestationalAge && $gestationalAge <= 36 && (($thisAge * 30.5 / 7) + 40) < 50) {
+		if($gestationalAge && $gestationalAge <= 36 && (($highlightedAge * 30.5 / 7) + 40) < 50) {
 			foreach($age as $ageKey => $ageValue) {
 				$age[$ageKey] = $gestationalAge + $ageValue * 30.5 / 7;
 			}
@@ -325,7 +280,7 @@ class HeadCircChart extends AbstractExternalModule
 		return [$sex,$age,$circumference,$height,$weight,$useFentonChart, $highlightedDatumIndex];
 	}
 	
-	function addChartToDataEntryForm($sex,$chartType,$useFentonChart,$age,$values,$repeat_instance,$chartField,$debugMode) {
+	function addChartToDataEntryForm($sex,$chartType,$useFentonChart,$age,$values,$highlightedDatumIndex,$chartField,$debugMode) {
 		$chartSex = "";
 		$chartDataSet = "";
 		$chartDetails = false;
@@ -347,7 +302,7 @@ class HeadCircChart extends AbstractExternalModule
 		}
 		
 		if($chartDetails) {
-			list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$values,$repeat_instance);
+			list($instanceX,$instanceY,$x,$y) = $this->calculateXY($chartDetails,$age,$values,$highlightedDatumIndex);
 			
 			$debugDetails = false;
 			if($debugMode) {
@@ -376,7 +331,7 @@ class HeadCircChart extends AbstractExternalModule
 		$weightZscoreField = $this->getProjectSetting("weight-zscore-field");
 		$weightPercentileField = $this->getProjectSetting("weight-percentile-field");
 		
-		$recordData = $this->getRecordData($project_id, $record, $event_id);
+		$recordData = $this->getRecordData($project_id, $record, $event_id, $repeat_instance);
 		
 		$sex = false;
 		$age = false;
@@ -509,7 +464,7 @@ class HeadCircChart extends AbstractExternalModule
 		}
 	}
 	
-	function getRecordData($projectId, $record, $eventId) {
+	function getRecordData($projectId, $record, $eventId, $repeatInstance = 1) {
 		$sexField = $this->getProjectSetting("sex-field");
 		$ageField = $this->getProjectSetting("age-field");
 		$gestationalAgeField = $this->getProjectSetting("gestational-age-field");
@@ -524,11 +479,38 @@ class HeadCircChart extends AbstractExternalModule
 			"return_format" => "json",
 		];
 
+		$this->isLong = \REDCap::isLongitudinal();
+
 		if (!$this->isLong) { $getDataParams["events"] = $eventId; }
 
 		$recordData = \REDCap::getData($getDataParams);
 		$recordData = json_decode($recordData,true);
-		
+
+		// copied from Records::getData as Proj object form $this->framework->getProject does not have getUniqueEventNames function
+		$Proj = new \Project(PROJECT_ID);
+		$eventLabel = $Proj->getUniqueEventNames()[$eventId];
+
+		// ensure recordData is sorted by age so index can be reliably used for highlighting
+		$ageCol = array_column($recordData, $ageField);
+		array_multisort($ageCol, SORT_ASC, $recordData);
+
+		// add flag marking value associated with actively viewed instrument/instance
+		// flag is set here as it's needed for both addChartToDataEntryForm and computation of z-score in redcap_save_record
+		// TODO: consider checking for presence of CUR_VALUE_FLAG_NAME to prevent unlikely naming clash
+		array_walk($recordData,
+				   function(&$eventDetails) use ($repeatInstance, $eventLabel) {
+					   $isCurrentValue = false;
+
+					   if ($eventLabel === $eventDetails["redcap_event_name"]) {
+						   if (($eventDetails["redcap_repeat_instrument"] !== "")) {
+							   if($eventDetails["redcap_repeat_instance"] == $repeatInstance) {
+								   $isCurrentValue = true;
+							   }
+						   } elseif ($this->isLong) { $isCurrentValue = true; }
+					   }
+					   $eventDetails[self::CUR_VALUE_FLAG_NAME] = $isCurrentValue;
+				   });
+
 		return $recordData;
 	}
 	
