@@ -316,6 +316,12 @@ class HeadCircChart extends AbstractExternalModule
 	}
 	
 	function redcap_save_record($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance) {
+		$this->calculateAndSaveScores($project_id, $record, $instrument, $event_id, $repeat_instance);
+	}
+
+	function calculateAndSaveScores($project_id, $record, $instrument, $event_id, $repeat_instance) {
+		// TODO: split this function into separate calculation and saveData functions
+		// Refactor to allow calculation to be an AJAX call, enable injection of values directly on frontend
 		$sexField = $this->getProjectSetting("sex-field");
 		$femaleValue = $this->getProjectSetting("female-value");
 		$maleValue = $this->getProjectSetting("male-value");
@@ -340,6 +346,8 @@ class HeadCircChart extends AbstractExternalModule
 		$height = false;
 		$weight = false;
 		$distributionData = false;
+
+		$isRepeat = false;
 		
 		foreach($recordData as $eventDetails) {
 			if($eventDetails[$sexField] !== "") {
@@ -350,7 +358,7 @@ class HeadCircChart extends AbstractExternalModule
 				$gestationalAge = $eventDetails[$gestationalAgeField];
 			}
 			
-			if($eventDetails["redcap_repeat_instance"] == $repeat_instance) {
+			if($eventDetails[self::CUR_VALUE_FLAG_NAME]) {
 				$age = $eventDetails[$ageField];
 				if($heightField) {
 					$height = $eventDetails[$heightField];
@@ -361,14 +369,20 @@ class HeadCircChart extends AbstractExternalModule
 				if($circumferenceField) {
 					$circumference = $eventDetails[$circumferenceField];
 				}
+				if($eventDetails["redcap_repeat_instrument"] !== "") {
+					$isRepeat = true;
+				}
 			}
 		}
 		## TODO Need to validate the height, weight and circumference are integers
 		$dataToSave = [
-			$this->getProject()->getRecordIdField() => $record,
-			"redcap_repeat_instance" => $repeat_instance,
-			"redcap_repeat_instrument" => $instrument
+			$this->getProject()->getRecordIdField() => $record
 		];
+
+		if ($isRepeat) {
+			$dataToSave["redcap_repeat_instance"] = $repeat_instance;
+			$dataToSave["redcap_repeat_instrument"] = $instrument;
+		}
 		
 		if($age !== false && $age !== "" && $sex !== false) {
 			$refData = $this->getCsvData();
@@ -452,13 +466,19 @@ class HeadCircChart extends AbstractExternalModule
 					$dataToSave[$weightPercentileField] = $percentile;
 				}
 			}
-			
-			if(count($dataToSave) > 3) {
-				$results = \REDCap::saveData([
-					"dataFormat" => "json",
-					"data" => json_encode([$dataToSave]),
-					"project_id" => $project_id
-				]);
+
+			$dataSaveArr = [
+				"data" => [$record => [
+					$event_id => $dataToSave
+				]],
+				"project_id" => $project_id
+			];
+			if ($isRepeat) {
+				$dataSaveArr[$record][$event_id]["redcap_repeat_instance"] = $repeat_instance;
+				$dataSaveArr[$record][$event_id]["redcap_repeat_instrument"] = $instrument;
+			}
+			if(count($dataToSave) >= 3) {
+				$results = \REDCap::saveData($dataSaveArr);
 //				error_log("Save data results: ".var_export($results,true));
 			}
 		}
