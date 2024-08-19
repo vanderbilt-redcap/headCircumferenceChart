@@ -157,7 +157,7 @@ class HeadCircChart extends AbstractExternalModule
 		$circInstrument = $this->getProject()->getFormForField($headChartField);
 		$heightInstrument = $this->getProject()->getFormForField($heightChartField);
 		$weightInstrument = $this->getProject()->getFormForField($weightChartField);
-		
+
 		## Process head circumference, height and weight data
 		if(count($age) > 0) {
 			echo "<script type='text/javascript'>
@@ -336,7 +336,25 @@ class HeadCircChart extends AbstractExternalModule
 		$heightPercentileField = $this->getProjectSetting("height-percentile-field");
 		$weightZscoreField = $this->getProjectSetting("weight-zscore-field");
 		$weightPercentileField = $this->getProjectSetting("weight-percentile-field");
-		
+
+		$thisFormFields = $this->framework->getFieldNames($instrument);
+		$calcFieldsPresent = [
+			$circZscoreField => false,
+			$circPercentileField => false,
+			$heightZscoreField => false,
+			$heightPercentileField => false,
+			$weightZscoreField => false,
+			$weightPercentileField => false
+		];
+
+		// HACK: flag fields present in current form to prevent error from saving data outside of current instrument
+		array_walk($calcFieldsPresent, function(&$isPresent, $fieldName) use ($thisFormFields) {
+			if( in_array($fieldName, $thisFormFields) ) {
+				$isPresent = true;
+			}
+		});
+		if (!in_array(true, $calcFieldsPresent, true)) { return; }
+
 		$recordData = $this->getRecordData($project_id, $record, $event_id, $repeat_instance);
 		
 		$sex = false;
@@ -429,10 +447,10 @@ class HeadCircChart extends AbstractExternalModule
 					($distributionData[0]*$distributionData[2]),3);
 				$percentile = round($this->zscoreToPercentile($zScore)*100);
 				
-				if($circZscoreField) {
+				if($circZscoreField && $calcFieldsPresent[$circZscoreField]) {
 					$dataToSave[$circZscoreField] = $zScore;
 				}
-				if($circPercentileField) {
+				if($circPercentileField && $calcFieldsPresent[$circPercentileField]) {
 					$dataToSave[$circPercentileField] = $percentile;
 				}
 			}
@@ -444,10 +462,10 @@ class HeadCircChart extends AbstractExternalModule
 					($distributionData[3]*$distributionData[5]),3);
 				$percentile = round($this->zscoreToPercentile($zScore) * 100);
 				
-				if($heightZscoreField) {
+				if($heightZscoreField && $calcFieldsPresent[$heightZscoreField]) {
 					$dataToSave[$heightZscoreField] = $zScore;
 				}
-				if($heightPercentileField) {
+				if($heightPercentileField && $calcFieldsPresent[$heightPercentileField]) {
 					$dataToSave[$heightPercentileField] = $percentile;
 				}
 			}
@@ -459,10 +477,10 @@ class HeadCircChart extends AbstractExternalModule
 					($distributionData[6]*$distributionData[8]),3);
 				$percentile = round($this->zscoreToPercentile($zScore) * 100);
 				
-				if($weightZscoreField) {
+				if($weightZscoreField && $calcFieldsPresent[$weightZscoreField]) {
 					$dataToSave[$weightZscoreField] = $zScore;
 				}
-				if($weightPercentileField) {
+				if($weightPercentileField && $calcFieldsPresent[$weightPercentileField]) {
 					$dataToSave[$weightPercentileField] = $percentile;
 				}
 			}
@@ -477,7 +495,7 @@ class HeadCircChart extends AbstractExternalModule
 				$dataSaveArr[$record][$event_id]["redcap_repeat_instance"] = $repeat_instance;
 				$dataSaveArr[$record][$event_id]["redcap_repeat_instrument"] = $instrument;
 			}
-			if(count($dataToSave) >= 3) {
+			if(count($dataToSave) >= 2) {
 				$results = \REDCap::saveData($dataSaveArr);
 //				error_log("Save data results: ".var_export($results,true));
 			}
