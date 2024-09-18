@@ -215,6 +215,8 @@ class HeadCircChart extends AbstractExternalModule
 		$foundInstance = false;
 		$i = 1;
 		foreach($recordData as $eventDetails) {
+			// ignore events that don't contain any age data at all to prevent crashes during calculation attempts
+			if ($eventDetails[$ageField] === "" && !$eventDetails[self::CUR_VALUE_FLAG_NAME]) { continue; }
 			if($eventDetails[$sexField] !== "") {
 				$sex = ($eventDetails[$sexField] === (string)$femaleValue ? "2" :
 					($eventDetails[$sexField] === (string)$maleValue ? "1" : false));
